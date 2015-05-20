@@ -12,6 +12,7 @@ Die Installation erfolgt manuell. Hierfür muss die Datei 77_UWZ.pm in dem Ordne
 Updates:
 -----------------------------------------
 In fhem kann mit folgendem Kommando das Modul upgedatet werden:
+
     update 77_UWZ.pm https://raw.githubusercontent.com/tobias-d-oe/fhem-uwz/master/control-uwz.txt
 
 
