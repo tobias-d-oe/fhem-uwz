@@ -1,4 +1,4 @@
-- GIT
+- SVN
   - bugfix:  Bugfixing "Warn_?_Hail"
   - bugfix:  Löschen der Readings beim Update nun "geziehlter" (^(Warn_[0-9]_|WarnCount))
   - feature: Readings Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date,

@@ -102,5 +102,4 @@ Attribute:
     humanreadable [0|1] (aktiviert Warn_0_Start_Date, Warn_0_Start_Time, Warn_0_End_Date und Warn_0_End_Time.)
 
 
-Falls es jemand testen möchte und dabei durch Zufall genau der Unwetter-Typ 1 oder 9 oder sonst ein unbekannter Typ auftritt, würde ich mich über Feedback freuen und die passenden Infos dann einarbeiten.
 
