@@ -1,0 +1,16 @@
+- GIT
+  - bugfix:  Bugfixing "Warn_?_Hail"
+  - bugfix:  Löschen der Readings beim Update nun "geziehlter" (^(Warn_[0-9]_|WarnCount))
+  - feature: Readings Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date,
+             Warn_?_End_Time per default aus. Werden mit attribut "humanreadable" aktiviert.
+             Leere Warnmeldungen entfernt.
+             Neues Reading Warn_?_Hail, zur Anzeige der Hagelgefahr.
+  - feature: Neue Readings hinzugefügt Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date,
+             Warn_?_End_Time auf Wunsch von björnbo und Michael.
+  - feature: Unwettertyp 11 = Bodenfrost hinzugefügt.
+  - feature: Unwettertyp 6 = Gewitter; Unwettertyp 7 = Waldbrand hinzugefügt.
+  - feature: Karten integriert: europa, isobaren1, isobaren2
+  - feature: Unwetterkarten um Österreich erweitert.
+  - feature: Erweiterungswunsch zum download der Unwetterkarten integriert
+  - feature: Änderungsvorschlag von hexenmeister eingebaut. (UWZAsHtmlKarteLand)
+  - feature: Unwettertyp 10 = Glatteisregen implementiert
