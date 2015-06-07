@@ -437,7 +437,7 @@ sub UWZ_Run($)
                      "6" => "waldbrand",     
                      "7" => "gewitter",     
                      "8" => "strassenglaette",
-                     "9" => "unknown",     # <===== FIX HERE
+                     "9" => "temperatur",    # 9 = hitzewarnung
                     "10" => "glatteisregen",
                     "11" => "temperatur" ); # 11 = bodenfrost
    my %severitycolor = ( "0" => "green", 
@@ -740,7 +740,7 @@ UWZAsHtmlKarteLand($$)
         <li><b>6</b> - thunderstorm</li>
         <li><b>7</b> - forest fire</li>
         <li><b>8</b> - glaze</li>
-        <li><b>9</b> - unknown</li>
+        <li><b>9</b> - heat</li>
         <li><b>10</b> - freezing rain</li>
         <li><b>11</b> - soil frost</li>
       </ul>
@@ -934,7 +934,7 @@ UWZAsHtmlKarteLand($$)
         <li><b>6</b> - Gewitter</li>
         <li><b>7</b> - Waldbrandgefahr</li>
         <li><b>8</b> - Glätte</li>
-        <li><b>9</b> - unbekannt</li>
+        <li><b>9</b> - Hitze</li>
         <li><b>10</b> - Glatteisregen</li>
         <li><b>11</b> - Bodenfrost</li>
       </ul>

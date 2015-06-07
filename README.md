@@ -83,7 +83,7 @@ Readings:
         6 - Waldbrand
         7 - Gewitter
         8 - Glätte
-        9 - unbekannt
+        9 - Hitze
       10 - Glatteisregen
       11 - Bodenfrost
     Warn_0_uwzLevel - Schwere des Unwetters (wie Severity)
