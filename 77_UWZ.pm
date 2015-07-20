@@ -599,8 +599,8 @@ UWZAsHtmlKarteLand($$)
   my $url = UWZ_Map2Image($hash,$land);
 
   my $ret = '';
-  $ret .= '<table class="uwz"><tr><th></th><th></th></tr>';
-  $ret .= '<tr><td class="uwzMap">';
+  $ret .= '<table class="block"><tr><th></th><th></th></tr>';
+  $ret .= '<tr class="odd"><td>';
   if(defined($url)) {
     $ret .= '<img src="'.$url.'">';
   } else {
