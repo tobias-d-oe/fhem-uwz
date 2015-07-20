@@ -1,4 +1,8 @@
-- SVN
+- 2015-07-20
+  - feature: Karten in default fhem style (class)
+
+- 2015-06-07
+  - initial git import
   - feature: Unwettertyp 9 = Hitzewarnung
   - bugfix:  Bugfixing "Warn_?_Hail"
   - bugfix:  Löschen der Readings beim Update nun "geziehlter" (^(Warn_[0-9]_|WarnCount))
