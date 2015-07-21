@@ -1,3 +1,8 @@
+- 2015-07-21
+  - feature: get Funktion fuer jeden Unwettertyp incl. Hagel hinzugefuegt. 
+             Der zurückgegebene Wert (active|inactive) gibt aus ob für den 
+             Abfragezeitpunkt eine Unwetterwarnung mit dem gewählten Typ besteht.
+
 - 2015-07-20
   - feature: Karten in default fhem style (class)
 

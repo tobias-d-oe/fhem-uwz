@@ -117,6 +117,7 @@ sub UWZ_Initialize($)
    $hash->{DefFn}    = "UWZ_Define";
    $hash->{UndefFn}  = "UWZ_Undef";
    $hash->{SetFn}    = "UWZ_Set";
+   $hash->{GetFn}    = "UWZ_Get";
    $hash->{AttrList} = "INTERVAL URL PLZ download:0,1 savepath maps humanreadable:0,1 " .
    $readingFnAttributes;
 }
@@ -190,6 +191,68 @@ sub UWZ_Set($@)
       }
    }
    return;
+}
+
+
+#####################################
+sub UWZ_Get($@)
+{
+   my ( $hash, @a ) = @_;
+   my $name    = $hash->{NAME};
+   my $usage   = "Unknown argument $a[1], choose one of Sturm:noArg Schneefall:noArg Regen:noArg Extremfrost:noArg Waldbrand:noArg Gewitter:noArg Glaette:noArg Hitze:noArg Glatteisregen:noArg Bodenfrost:noArg Hagel:noArg ";
+ 
+   return $usage if ( @a < 2 );
+   
+   if    ($a[1] =~ /^Sturm/)            { UWZ_GetCurrent($hash,2); }
+   elsif ($a[1] =~ /^Schneefall/)       { UWZ_GetCurrent($hash,3); }
+   elsif ($a[1] =~ /^Regen/)            { UWZ_GetCurrent($hash,4); }
+   elsif ($a[1] =~ /^Extremfrost/)      { UWZ_GetCurrent($hash,5); }
+   elsif ($a[1] =~ /^Waldbrand/)        { UWZ_GetCurrent($hash,6); }
+   elsif ($a[1] =~ /^Gewitter/)         { UWZ_GetCurrent($hash,7); }
+   elsif ($a[1] =~ /^Glaette/)          { UWZ_GetCurrent($hash,8); }
+   elsif ($a[1] =~ /^Hitze/)            { UWZ_GetCurrent($hash,9); }
+   elsif ($a[1] =~ /^Glatteisregen/)    { UWZ_GetCurrent($hash,10); }
+   elsif ($a[1] =~ /^Bodenfrost/)       { UWZ_GetCurrent($hash,11); }
+   elsif ($a[1] =~ /^Hagel/)            { UWZ_GetCurrentHail($hash); }
+   else                                 { return $usage; }
+
+}
+
+
+#####################################
+sub UWZ_GetCurrent($@)
+{
+  my ( $hash, @a ) = @_;
+  my $name         = $hash->{NAME};
+  my $out;
+  my $curTimestamp = time();
+  for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
+  if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Type","") eq $a[0])  ) {
+        $out= "active"; 
+        last;
+        } else {
+            $out = "inactive";
+          }
+  };
+  return $out;
+}
+
+#####################################
+sub UWZ_GetCurrentHail($)
+{
+  my ( $hash ) = @_;
+  my $name         = $hash->{NAME};
+  my $out;
+  my $curTimestamp = time();
+  for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
+  if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Hail","") eq 1)  ) {
+        $out= "active"; 
+        last;
+        } else {
+            $out= "inactive";
+          }
+  };
+  return $out;
 }
 
 
@@ -668,8 +731,51 @@ UWZAsHtmlKarteLand($$)
    <b>Get</b>
    <ul>
       <br>
-      <li>N/A</li>
-      <br>
+      <li><code>get &lt;name&gt; Bodenfrost</code>
+         <br>
+         give info about current soil frost (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Extremfrost</code>
+         <br>
+         give info about current frost (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Gewitter</code>
+         <br>
+         give info about current thunderstorm (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Glaette</code>
+         <br>
+         give info about current glaze (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Glatteisregen</code>
+         <br>
+         give info about current freezing rain (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Hagel</code>
+         <br>
+         give info about current hail (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Hitze</code>
+         <br>
+         give info about current heat (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Regen</code>
+         <br>
+         give info about current rain (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Schneefall</code>
+         <br>
+         give info about current snow (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Sturm</code>
+         <br>
+         give info about current storm (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Waldbrand</code>
+         <br>
+         give info about current forest fire (active|inactive).
+      </li><br>
+
    </ul>  
   
    <br>
@@ -862,8 +968,52 @@ UWZAsHtmlKarteLand($$)
    <b>Get</b>
    <ul>
       <br>
-      <li>N/A</li>
-      <br>
+      <li><code>get &lt;name&gt; Bodenfrost</code>
+         <br>
+         Gibt aus ob aktuell eine Bodenfrostwarnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Extremfrost</code>
+         <br>
+         Gibt aus ob aktuell eine Extremfrostwarnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Gewitter</code>
+         <br>
+         Gibt aus ob aktuell eine Gewitter Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Glaette</code>
+         <br>
+         Gibt aus ob aktuell eine Glaettewarnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Glatteisregen</code>
+         <br>
+         Gibt aus ob aktuell eine Glatteisregen Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Hagel</code>
+         <br>
+         Gibt aus ob aktuell eine Hagel Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Hitze</code>
+         <br>
+         Gibt aus ob aktuell eine Hitze Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Regen</code>
+         <br>
+         Gibt aus ob aktuell eine Regen Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Schneefall</code>
+         <br>
+         Gibt aus ob aktuell eine Schneefall Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Sturm</code>
+         <br>
+         Gibt aus ob aktuell eine Sturm Warnung besteht (active|inactive).
+      </li><br>
+      <li><code>get &lt;name&gt; Waldbrand</code>
+         <br>
+         Gibt aus ob aktuell eine Waldbrand Warnung besteht (active|inactive).
+      </li><br>
+
+
    </ul>  
   
    <br>
