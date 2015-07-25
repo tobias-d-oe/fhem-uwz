@@ -226,14 +226,18 @@ sub UWZ_GetCurrent($@)
   my $name         = $hash->{NAME};
   my $out;
   my $curTimestamp = time();
-  for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
-  if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Type","") eq $a[0])  ) {
-        $out= "active"; 
-        last;
-        } else {
-            $out = "inactive";
-          }
-  };
+  if ( ReadingsVal($name,"WarnCount", 0) eq 0 ) {
+  	$out = "inactive";
+  } else {  
+  	for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
+  		if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Type","") eq $a[0])  ) {
+        		$out= "active"; 
+        		last;
+        	} else {
+            		$out = "inactive";
+          	}
+  	};
+  }
   return $out;
 }
 
@@ -244,14 +248,18 @@ sub UWZ_GetCurrentHail($)
   my $name         = $hash->{NAME};
   my $out;
   my $curTimestamp = time();
-  for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
-  if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Hail","") eq 1)  ) {
-        $out= "active"; 
-        last;
-        } else {
-            $out= "inactive";
-          }
-  };
+  if ( ReadingsVal($name,"WarnCount", 0) eq 0 ) {
+        $out = "inactive";
+  } else {
+	for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
+  		if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Hail","") eq 1)  ) {
+        		$out= "active"; 
+        		last;
+        	} else {
+            		$out= "inactive";
+          	}
+  	};
+  }
   return $out;
 }
 
