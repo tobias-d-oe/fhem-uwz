@@ -1,3 +1,6 @@
+- 2015-07-25
+  - bugfix:  get Funktion bei WarnCount=0 lieferte kein Ergebniss
+
 - 2015-07-21
   - feature: get Funktion fuer jeden Unwettertyp incl. Hagel hinzugefuegt. 
              Der zurückgegebene Wert (active|inactive) gibt aus ob für den 
