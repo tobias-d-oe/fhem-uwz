@@ -1,3 +1,6 @@
+- 2015-07-26
+  - bugfix:  fix styling
+
 - 2015-07-25
   - bugfix:  get Funktion bei WarnCount=0 lieferte kein Ergebniss
 

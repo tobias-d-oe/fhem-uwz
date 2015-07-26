@@ -608,6 +608,15 @@ UWZAsHtml($;$)
   
   
     $ret .= '</table>';
+  } else {
+    $ret .= '<table><tr><td>';
+    $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
+    $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
+    $ret .='<b>Keine Warnungen</b>';
+    $ret .= '</td></tr>';
+    $ret .= '</table>';
+    $ret .= '</td></tr>';
+    $ret .= '</table>';
   }
 
   return $ret;
@@ -635,7 +644,17 @@ UWZAsHtmlLite($;$)
   
   
     $ret .= '</table>';
+  } else {
+    $ret .= '<table><tr><td>';
+    $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
+    $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
+    $ret .='<b>Keine Warnungen</b>';
+    $ret .= '</td></tr>';
+    $ret .= '</table>';
+    $ret .= '</td></tr>';
+    $ret .= '</table>';
   }
+
   return $ret;
 }
 
