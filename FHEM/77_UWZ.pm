@@ -669,15 +669,15 @@ UWZAsHtmlKarteLand($$)
 #     my $uwz_at_url = "http://unwetter.wetteralarm.at/images/map/";
   my $url = UWZ_Map2Image($hash,$land);
 
-  my $ret = '';
-  $ret .= '<table class="block"><tr><th></th><th></th></tr>';
-  $ret .= '<tr class="odd"><td>';
+  my $ret = '<table><tr><td>';
+  $ret .= '<table class="block wide">';
+  $ret .= '<tr class="even"><td>';
   if(defined($url)) {
     $ret .= '<img src="'.$url.'">';
   } else {
     $ret .= 'unbekannte Landbezeichnung';
   }
-  $ret .= '</td></tr>';
+  $ret .= '</td></tr></table></td></tr>';
   $ret .= '</table>';
   return $ret;
 }
