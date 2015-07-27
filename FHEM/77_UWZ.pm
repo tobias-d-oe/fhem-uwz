@@ -592,7 +592,8 @@ UWZAsHtml($;$)
   my ($hash,$items) = @_;
   my $ret = '';
   if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
-    $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
+    $ret .= '<table><tr><td>';
+    $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
   
     for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
       $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
@@ -607,6 +608,8 @@ UWZAsHtml($;$)
     }
   
   
+    $ret .= '</table>';
+    $ret .= '</td></tr>';
     $ret .= '</table>';
   } else {
     $ret .= '<table><tr><td>';
@@ -629,6 +632,8 @@ UWZAsHtmlLite($;$)
   my ($hash,$items) = @_;
   my $ret = '';
   if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
+
+    $ret .= '<table><tr><td>';
     $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
   
     for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
@@ -643,6 +648,8 @@ UWZAsHtmlLite($;$)
     }
   
   
+    $ret .= '</table>';
+    $ret .= '</td></tr>';
     $ret .= '</table>';
   } else {
     $ret .= '<table><tr><td>';
