@@ -2,7 +2,8 @@
 #
 #  77_UWZ.pm
 #
-#  (c) 2015 Tobias D. Oestreicher 
+#  (c) 2015 Tobias D. Oestreicher
+#  (c) 2016 Copyright: Marko Oldenburg (leongaultier at gmail dot com)
 #  
 #  Storm warnings from unwetterzentrale.de
 #  inspired by 59_PROPLANTA.pm
@@ -26,13 +27,21 @@
 #
 #  This copyright notice MUST APPEAR in all copies of the script!
 #
+#
+#
+#  $Id$
+#
 ####################################################################################################
 # also a thanks goes to hexenmeister
 ##############################################
+
+
+
 package main;
 use strict;
 use feature qw/say switch/;
 use warnings;
+no warnings 'experimental::lexical_subs','experimental::smartmatch';
 
 my $missingModul;
 eval "use LWP::UserAgent;1" or $missingModul .= "LWP::UserAgent ";
@@ -48,33 +57,37 @@ require 'HttpUtils.pm';
 use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
-my $MODUL          = "UWZ";
+my $MODUL           = "UWZ";
+my $version         = "0.5.2";
 
 my $countrycode = "DE";
 my $plz = "77777";
 my $uwz_alert_url = "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=de&areaID=UWZ" . $countrycode . $plz;
 
-########################################
-sub UWZ_Log($$$)
-{
-   my ( $hash, $loglevel, $text ) = @_;
-   my $xline       = ( caller(0) )[2];
-   
-   my $xsubroutine = ( caller(1) )[3];
-   my $sub         = ( split( ':', $xsubroutine ) )[2];
-   $sub =~ s/UWZ_//;
 
-   my $instName = ( ref($hash) eq "HASH" ) ? $hash->{NAME} : $hash;
-   Log3 $instName, $loglevel, "$MODUL $instName: $sub.$xline " . $text;
+
+########################################
+sub UWZ_Log($$$) {
+
+    my ( $hash, $loglevel, $text ) = @_;
+    my $xline       = ( caller(0) )[2];
+
+    my $xsubroutine = ( caller(1) )[3];
+    my $sub         = ( split( ':', $xsubroutine ) )[2];
+    $sub =~ s/UWZ_//;
+
+    my $instName = ( ref($hash) eq "HASH" ) ? $hash->{NAME} : $hash;
+    Log3 $instName, $loglevel, "$MODUL $instName: $sub.$xline " . $text;
 }
 
 ########################################
-sub UWZ_Map2Image($$)
-{
+sub UWZ_Map2Image($$) {
+
     my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
     my $uwz_at_url = "http://unwetter.wetteralarm.at/images/map/";
     my ( $hash, $smap ) = @_;
     my $lmap;
+    
     $smap=lc($smap);
     $lmap->{'europa'}=$uwz_de_url.'europe_index.png';
     $lmap->{'deutschland'}=$uwz_de_url.'deutschland_index.png';
@@ -111,603 +124,649 @@ sub UWZ_Map2Image($$)
 }
 
 ###################################
-sub UWZ_Initialize($)
-{
-   my ($hash) = @_;
-   $hash->{DefFn}    = "UWZ_Define";
-   $hash->{UndefFn}  = "UWZ_Undef";
-   $hash->{SetFn}    = "UWZ_Set";
-   $hash->{GetFn}    = "UWZ_Get";
-   $hash->{AttrList} = "INTERVAL URL PLZ download:0,1 savepath maps humanreadable:0,1 " .
-   $readingFnAttributes;
+sub UWZ_Initialize($) {
+
+    my ($hash) = @_;
+    $hash->{DefFn}    = "UWZ_Define";
+    $hash->{UndefFn}  = "UWZ_Undef";
+    $hash->{SetFn}    = "UWZ_Set";
+    $hash->{GetFn}    = "UWZ_Get";
+    $hash->{AttrList} = "INTERVAL ".
+                        "URL ".
+                        "PLZ ".
+                        "download:0,1 ".
+                        "savepath ".
+                        "maps ".
+                        "humanreadable:0,1 ".
+                        $readingFnAttributes;
+   
+    foreach my $d(sort keys %{$modules{UWZ}{defptr}}) {
+        my $hash = $modules{UWZ}{defptr}{$d};
+        $hash->{VERSION}      = $version;
+    }
 }
 
 ###################################
-sub UWZ_Define($$)
-{
-   my ( $hash, $def ) = @_;
-   my $name = $hash->{NAME};
-   my $lang = "";
-   my @a    = split( "[ \t][ \t]*", $def );
-   
-   return "Error: Perl moduls ".$missingModul."are missing on this system"
-      if $missingModul;
-   return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if int(@a) > 6;
-   $hash->{STATE}              = "Initializing";
-   $hash->{CountryCode}              = $a[2];
-   $hash->{PLZ}              = $a[3];
-   $hash->{URL}                =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=de&areaID=UWZ" . $a[2] . $a[3];
-   $hash->{fhem}{LOCAL}        = 0;
-   $hash->{INTERVAL}           = $a[4];
-   $hash->{fhem}{modulVersion} = '$Date: 2015-05-10 01:41:33 +0100 (Sun 10 Mai 2015) $';
-   
-   RemoveInternalTimer($hash);
-   
-   #Get first data after 12 seconds
-   InternalTimer( gettimeofday() + 12, "UWZ_Start", $hash, 0 );
+sub UWZ_Define($$) {
 
-   return undef;
+    my ( $hash, $def ) = @_;
+    my $name = $hash->{NAME};
+    my $lang = "";
+    my @a    = split( "[ \t][ \t]*", $def );
+   
+    return "Error: Perl moduls ".$missingModul."are missing on this system" if( $missingModul );
+    return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if int(@a) > 6;
+
+    $hash->{STATE}           = "Initializing";
+    $hash->{CountryCode}     = $a[2];
+    $hash->{PLZ}             = $a[3];
+    $hash->{URL}             =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=de&areaID=UWZ" . $a[2] . $a[3];
+    $hash->{fhem}{LOCAL}     = 0;
+    $hash->{INTERVAL}        = $a[4];
+    $hash->{VERSION}         = $version;
+   
+    RemoveInternalTimer($hash);
+   
+    #Get first data after 12 seconds
+    InternalTimer( gettimeofday() + 12, "UWZ_Start", $hash, 0 );
+
+    return undef;
 }
 
 #####################################
-sub UWZ_Undef($$)
-{
-   my ( $hash, $arg ) = @_;
+sub UWZ_Undef($$) {
 
-   RemoveInternalTimer( $hash );
+    my ( $hash, $arg ) = @_;
+
+    RemoveInternalTimer( $hash );
+    BlockingKill( $hash->{helper}{RUNNING_PID} ) if ( defined( $hash->{helper}{RUNNING_PID} ) );
    
-   BlockingKill( $hash->{helper}{RUNNING_PID} ) if ( defined( $hash->{helper}{RUNNING_PID} ) );
-   
-   return undef;
+    return undef;
 }
 
 #####################################
-sub UWZ_Set($@)
-{
-   my ( $hash, @a ) = @_;
-   my $name    = $hash->{NAME};
-   my $reUINT = '^([\\+]?\\d+)$';
-   my $usage   = "Unknown argument $a[1], choose one of update:noArg ";
+sub UWZ_Set($@) {
+
+    my ( $hash, @a ) = @_;
+    my $name    = $hash->{NAME};
+    my $reUINT = '^([\\+]?\\d+)$';
+    my $usage   = "Unknown argument $a[1], choose one of update:noArg ";
+
+    return $usage if ( @a < 2 );
+
+    my $cmd = lc( $a[1] );
+    
+    given ($cmd)
+    {
+        when ("?")
+        {
+            return $usage;
+        }
+        
+        when ("update")
+        {
+            UWZ_Log $hash, 4, "set command: " . $a[1];
+            $hash->{fhem}{LOCAL} = 1;
+            UWZ_Start($hash);
+            $hash->{fhem}{LOCAL} = 0;
+        }
+        
+        default
+        {
+            return $usage;
+        }
+    }
+    
+    return;
+}
+
+#####################################
+sub UWZ_Get($@) {
+
+    my ( $hash, @a ) = @_;
+    my $name    = $hash->{NAME};
+    my $usage   = "Unknown argument $a[1], choose one of Sturm:noArg Schneefall:noArg Regen:noArg Extremfrost:noArg Waldbrand:noArg Gewitter:noArg Glaette:noArg Hitze:noArg Glatteisregen:noArg Bodenfrost:noArg Hagel:noArg ";
  
-   return $usage if ( @a < 2 );
+    return $usage if ( @a < 2 );
    
-   my $cmd = lc( $a[1] );
-   given ($cmd)
-   {
-      when ("?")
-      {
-         return $usage;
-      }
-      when ("update")
-      {
-         UWZ_Log $hash, 3, "set command: " . $a[1];
-         $hash->{fhem}{LOCAL} = 1;
-         UWZ_Start($hash);
-         $hash->{fhem}{LOCAL} = 0;
-      }
-       default
-      {
-         return $usage;
-      }
-   }
-   return;
-}
-
-
-#####################################
-sub UWZ_Get($@)
-{
-   my ( $hash, @a ) = @_;
-   my $name    = $hash->{NAME};
-   my $usage   = "Unknown argument $a[1], choose one of Sturm:noArg Schneefall:noArg Regen:noArg Extremfrost:noArg Waldbrand:noArg Gewitter:noArg Glaette:noArg Hitze:noArg Glatteisregen:noArg Bodenfrost:noArg Hagel:noArg ";
- 
-   return $usage if ( @a < 2 );
-   
-   if    ($a[1] =~ /^Sturm/)            { UWZ_GetCurrent($hash,2); }
-   elsif ($a[1] =~ /^Schneefall/)       { UWZ_GetCurrent($hash,3); }
-   elsif ($a[1] =~ /^Regen/)            { UWZ_GetCurrent($hash,4); }
-   elsif ($a[1] =~ /^Extremfrost/)      { UWZ_GetCurrent($hash,5); }
-   elsif ($a[1] =~ /^Waldbrand/)        { UWZ_GetCurrent($hash,6); }
-   elsif ($a[1] =~ /^Gewitter/)         { UWZ_GetCurrent($hash,7); }
-   elsif ($a[1] =~ /^Glaette/)          { UWZ_GetCurrent($hash,8); }
-   elsif ($a[1] =~ /^Hitze/)            { UWZ_GetCurrent($hash,9); }
-   elsif ($a[1] =~ /^Glatteisregen/)    { UWZ_GetCurrent($hash,10); }
-   elsif ($a[1] =~ /^Bodenfrost/)       { UWZ_GetCurrent($hash,11); }
-   elsif ($a[1] =~ /^Hagel/)            { UWZ_GetCurrentHail($hash); }
-   else                                 { return $usage; }
-
-}
-
-
-#####################################
-sub UWZ_GetCurrent($@)
-{
-  my ( $hash, @a ) = @_;
-  my $name         = $hash->{NAME};
-  my $out;
-  my $curTimestamp = time();
-  if ( ReadingsVal($name,"WarnCount", 0) eq 0 ) {
-  	$out = "inactive";
-  } else {  
-  	for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
-  		if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Type","") eq $a[0])  ) {
-        		$out= "active"; 
-        		last;
-        	} else {
-            		$out = "inactive";
-          	}
-  	};
-  }
-  return $out;
+    if    ($a[1] =~ /^Sturm/)            { UWZ_GetCurrent($hash,2); }
+    elsif ($a[1] =~ /^Schneefall/)       { UWZ_GetCurrent($hash,3); }
+    elsif ($a[1] =~ /^Regen/)            { UWZ_GetCurrent($hash,4); }
+    elsif ($a[1] =~ /^Extremfrost/)      { UWZ_GetCurrent($hash,5); }
+    elsif ($a[1] =~ /^Waldbrand/)        { UWZ_GetCurrent($hash,6); }
+    elsif ($a[1] =~ /^Gewitter/)         { UWZ_GetCurrent($hash,7); }
+    elsif ($a[1] =~ /^Glaette/)          { UWZ_GetCurrent($hash,8); }
+    elsif ($a[1] =~ /^Hitze/)            { UWZ_GetCurrent($hash,9); }
+    elsif ($a[1] =~ /^Glatteisregen/)    { UWZ_GetCurrent($hash,10); }
+    elsif ($a[1] =~ /^Bodenfrost/)       { UWZ_GetCurrent($hash,11); }
+    elsif ($a[1] =~ /^Hagel/)            { UWZ_GetCurrentHail($hash); }
+    else                                 { return $usage; }
 }
 
 #####################################
-sub UWZ_GetCurrentHail($)
-{
-  my ( $hash ) = @_;
-  my $name         = $hash->{NAME};
-  my $out;
-  my $curTimestamp = time();
-  if ( ReadingsVal($name,"WarnCount", 0) eq 0 ) {
+sub UWZ_GetCurrent($@) {
+
+    my ( $hash, @a ) = @_;
+    my $name         = $hash->{NAME};
+    my $out;
+    my $curTimestamp = time();
+    if ( ReadingsVal($name,"WarnCount", 0) eq 0 ) {
         $out = "inactive";
-  } else {
-	for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++){
-  		if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Hail","") eq 1)  ) {
-        		$out= "active"; 
-        		last;
-        	} else {
-            		$out= "inactive";
-          	}
-  	};
+    } else {  
+        for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++) {
+            if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Type","") eq $a[0])  ) {
+                $out= "active"; 
+                last;
+            } else {
+                $out = "inactive";
+            }
+  	}
   }
   return $out;
 }
 
+#####################################
+sub UWZ_GetCurrentHail($) {
+
+    my ( $hash ) = @_;
+    my $name         = $hash->{NAME};
+    my $out;
+    my $curTimestamp = time();
+    
+    if ( ReadingsVal($name,"WarnCount", 0) eq 0 ) {
+        $out = "inactive";
+    } else {
+        for(my $i= 0;$i < ReadingsVal($name,"WarnCount", 0);$i++) {
+            if (  (ReadingsVal($name,"Warn_".$i."_Start","") le $curTimestamp) &&  (ReadingsVal($name,"Warn_".$i."_End","") ge $curTimestamp) && (ReadingsVal($name,"Warn_".$i."_Hail","") eq 1)  ) {
+                $out= "active"; 
+                last;
+            } else {
+                $out= "inactive";
+            }
+  	}
+  }
+
+    return $out;
+}
 
 #####################################
-sub UWZ_JSONAcquire($$)
-{
-   my ($hash, $URL)  = @_;
-   my $name    = $hash->{NAME};
-   return unless (defined($hash->{NAME}));
+sub UWZ_JSONAcquire($$) {
+
+    my ($hash, $URL)  = @_;
+    my $name    = $hash->{NAME};
+    
+    return unless (defined($hash->{NAME}));
  
-   UWZ_Log $hash, 4, "Start capturing of $URL";
+    UWZ_Log $hash, 4, "Start capturing of $URL";
 
-   my $err_log  = "";
-   my $agent    = LWP::UserAgent->new( env_proxy => 1, keep_alive => 1, protocols_allowed => ['http'], timeout => 10 );
-   my $request   = HTTP::Request->new( GET => $URL );
-   my $response = $agent->request($request);
-   $err_log = "Can't get $URL -- " . $response->status_line
-     unless $response->is_success;
+    my $err_log  = "";
+    my $agent    = LWP::UserAgent->new( env_proxy => 1, keep_alive => 1, protocols_allowed => ['http'], timeout => 10 );
+    my $request   = HTTP::Request->new( GET => $URL );
+    my $response = $agent->request($request);
+    $err_log = "Can't get $URL -- " . $response->status_line unless( $response->is_success );
      
-   if ( $err_log ne "" )
-   {
-      readingsSingleUpdate($hash, "lastConnection", $response->status_line, 1);
-      UWZ_Log $hash, 1, "Error: $err_log";
-      return "Error|Error " . $response->status_line;
-   }
+    if ( $err_log ne "" ) {
+        readingsSingleUpdate($hash, "lastConnection", $response->status_line, 1);
+        UWZ_Log $hash, 1, "Error: $err_log";
+        return "Error|Error " . $response->status_line;
+    }
 
-   UWZ_Log $hash, 4, length($response->content)." characters captured";
-   return $response->content;
+    UWZ_Log $hash, 4, length($response->content)." characters captured";
+    return $response->content;
 }
 
 
 #####################################
-sub UWZ_Start($)
-{
-   my ($hash) = @_;
-   my $name   = $hash->{NAME};
+sub UWZ_Start($) {
+
+    my ($hash) = @_;
+    my $name   = $hash->{NAME};
    
-   return unless (defined($hash->{NAME}));
+    return unless (defined($hash->{NAME}));
    
-   $hash->{INTERVAL} = AttrVal( $name, "INTERVAL",  $hash->{INTERVAL} );
-   if(!$hash->{fhem}{LOCAL} && $hash->{INTERVAL} > 0) {
-    # set up timer if automatically call
-      RemoveInternalTimer( $hash );
-      InternalTimer(gettimeofday() + $hash->{INTERVAL}, "UWZ_Start", $hash, 1 );  
-      return undef if( AttrVal($name, "disable", 0 ) == 1 );
-   }
+    $hash->{INTERVAL} = AttrVal( $name, "INTERVAL",  $hash->{INTERVAL} );
+    if(!$hash->{fhem}{LOCAL} && $hash->{INTERVAL} > 0) {        # set up timer if automatically call
+    
+        RemoveInternalTimer( $hash );
+        InternalTimer(gettimeofday() + $hash->{INTERVAL}, "UWZ_Start", $hash, 1 );  
+        return undef if( AttrVal($name, "disable", 0 ) == 1 );
+    }
    
-   if ( AttrVal( $name, 'URL', '') eq '' && not defined( $hash->{URL} ) )
-   {
-      UWZ_Log $hash, 3, "missing URL";
-      return;
-   }
+    if ( AttrVal( $name, 'URL', '') eq '' && not defined( $hash->{URL} ) ) {
+
+        UWZ_Log $hash, 3, "missing URL";
+        return;
+    }
   
-   $hash->{helper}{RUNNING_PID} =
-           BlockingCall( 
-           "UWZ_Run",   # callback worker task
-           $name,                    # name of the device
-           "UWZ_Done",  # callback result method
-           120,                       # timeout seconds
-           "UWZ_Aborted", #  callback for abortion
-           $hash );                 # parameter for abortion
+    $hash->{helper}{RUNNING_PID} =
+        BlockingCall( 
+            "UWZ_Run",          # callback worker task
+            $name,              # name of the device
+            "UWZ_Done",         # callback result method
+            120,                # timeout seconds
+            "UWZ_Aborted",      #  callback for abortion
+            $hash );            # parameter for abortion
 }
+
 #####################################
-sub UWZ_Aborted($)
-{
-   my ($hash) = @_;
-   delete( $hash->{helper}{RUNNING_PID} );
+sub UWZ_Aborted($) {
+
+    my ($hash) = @_;
+    delete( $hash->{helper}{RUNNING_PID} );
 }
-
-
-
 
 #####################################
 # asyncronous callback by blocking
-sub UWZ_Done($)
-{
-   my ($string) = @_;
-   return unless ( defined($string) );
+sub UWZ_Done($) {
+
+    my ($string) = @_;
+    return unless ( defined($string) );
    
-   # all term are separated by "|" , the first is the name of the instance
-   my ( $name, %values ) = split( "\\|", $string );
-   my $hash = $defs{$name};
-   return unless ( defined($hash->{NAME}) );
+    # all term are separated by "|" , the first is the name of the instance
+    my ( $name, %values ) = split( "\\|", $string );
+    my $hash = $defs{$name};
+    return unless ( defined($hash->{NAME}) );
    
-   # delete the marker for RUNNING_PID process
-   delete( $hash->{helper}{RUNNING_PID} );  
+    # delete the marker for RUNNING_PID process
+    delete( $hash->{helper}{RUNNING_PID} );  
+
+
+
+## alter Code sollte gelöscht werden
+#   
 #   fhem("deletereading ".$hash->{NAME}." .*");
+#
+#   foreach my $skey (grep /^(Warn_?_|WarnCount)/ ,sort keys %{ $hash->{READINGS} }) {
+#       UWZ_Log $hash, 3, "Delete Reading:$skey"; 
+#       delete $hash->{READINGS}{$skey};
+#   }
 
-   foreach my $skey (grep /^(Warn_?_|WarnCount)/ ,sort keys %{ $hash->{READINGS} }) {
-       UWZ_Log $hash, 3, "Delete Reading:$skey"; 
-       delete $hash->{READINGS}{$skey};
-   }
 
 
-   # UnWetterdaten speichern
-   readingsBeginUpdate($hash);
+    UWZ_Log $hash, 4, "Delete old Readings"; 
+    CommandDeleteReading(undef, "$hash->{NAME} Warn_?_.*");
 
-   if ( defined $values{Error} )
-   {
-      readingsBulkUpdate( $hash, "lastConnection", $values{Error} );
-   }
-   else
-   {
 
-      while (my ($rName, $rValue) = each(%values) )
-      {
-         readingsBulkUpdate( $hash, $rName, $rValue );
-         UWZ_Log $hash, 5, "reading:$rName value:$rValue";
-      }
+    # UnWetterdaten speichern
+    readingsBeginUpdate($hash);
+
+    if ( defined $values{Error} ) {
+    
+        readingsBulkUpdate( $hash, "lastConnection", $values{Error} );
+        
+    } else {
+
+        while (my ($rName, $rValue) = each(%values) ) {
+            readingsBulkUpdate( $hash, $rName, $rValue );
+            UWZ_Log $hash, 5, "reading:$rName value:$rValue";
+        }
       
-      if (keys %values > 0) 
-      {
-         my $newState;
-         if (defined $values{WarnCount})
-         {
-            $newState = "Warnungen: " . $values{WarnCount};
-         }
-         else
-         {
-            $newState = "Error: Could not capture all data. Please check CountryCode and PLZ.";
-         }
-         readingsBulkUpdate($hash, "state", $newState);
-         readingsBulkUpdate( $hash, "lastConnection", keys( %values )." values captured in ".$values{durationFetchReadings}." s" );
-         UWZ_Log $hash, 4, keys( %values )." values captured";
-      }
-      else
-      {
-         readingsBulkUpdate( $hash, "lastConnection", "no data found" );
-         UWZ_Log $hash, 1, "No data found. Check city name or URL.";
-      }
-   }
-   readingsEndUpdate( $hash, 1 );
+        if (keys %values > 0) {
+            my $newState;
+            if (defined $values{WarnCount}) {
+                $newState = "Warnungen: " . $values{WarnCount};
+                
+            } else {
+                $newState = "Error: Could not capture all data. Please check CountryCode and PLZ.";
+            }
+            
+            readingsBulkUpdate($hash, "state", $newState);
+            readingsBulkUpdate( $hash, "lastConnection", keys( %values )." values captured in ".$values{durationFetchReadings}." s" );
+            UWZ_Log $hash, 4, keys( %values )." values captured";
+            
+        } else {
+      
+        readingsBulkUpdate( $hash, "lastConnection", "no data found" );
+        UWZ_Log $hash, 1, "No data found. Check city name or URL.";
+        
+        }
+    }
+    
+    readingsEndUpdate( $hash, 1 );
 }
 
 
 #####################################
-sub UWZ_Run($)
-{
-   my ($name) = @_;
-   my $ptext=$name;
-   my $UWZ_CC;
-   my $UWZ_INT;
-   my $UWZ_download;
-   my $UWZ_savepath;
-   my $UWZ_humanreadable;
-   return unless ( defined($name) );
+sub UWZ_Run($) {
+
+    my ($name) = @_;
+    my $ptext=$name;
+    my $UWZ_CC;
+    my $UWZ_INT;
+    my $UWZ_download;
+    my $UWZ_savepath;
+    my $UWZ_humanreadable;
+    
+    return unless ( defined($name) );
    
-   my $hash = $defs{$name};
-   return unless (defined($hash->{NAME}));
-   my $readingStartTime = time();
-   my $attrCountryCode  = AttrVal( $name, 'CountryCode', '' );
-   my $attrPLZ          = AttrVal( $name, 'PLZ', "" );
-   my $attrINTERVAL     = AttrVal( $name, 'INTERVAL','');
-   my $attrdownload     = AttrVal( $name, 'download','');
-   my $attrsavepath     = AttrVal( $name, 'savepath','');
-   my $maps2fetch       = AttrVal( $name, 'maps','');
-## begin redundant Reading switch
-   my $attrhumanreadable = AttrVal( $name, 'humanreadable','');
-## end redundant Reading switch
-   # preset CountryCode
-   if ($attrCountryCode eq "")
-   {
-      $UWZ_CC = "DE";
-   }
-   else
-   {
-      $UWZ_CC = $attrCountryCode;
-   }
-   # preset INTERVAL
-   if ($attrINTERVAL eq "")
-   {
-      $UWZ_INT = 3600;
-   }
-   else
-   {
-      $UWZ_INT = $attrINTERVAL;
-   }
-   # preset download
-   if ($attrdownload eq "")
-   {
-      $UWZ_download = 0;
-   }
-   else
-   {
-      $UWZ_download = $attrdownload;
-   }
-   # preset savepath
-   if ($attrsavepath eq "")
-   {
-      $UWZ_savepath = "/tmp/";
-   }
-   else
-   {
-      $UWZ_savepath = $attrsavepath;
-   }
-   # preset humanreadable
-   if ($attrhumanreadable eq "")
-   {
-      $UWZ_humanreadable = 0;
-   }
-   else
-   {
+    my $hash = $defs{$name};
+    return unless (defined($hash->{NAME}));
+    
+    my $readingStartTime = time();
+    my $attrCountryCode  = AttrVal( $name, 'CountryCode', '' );
+    my $attrPLZ          = AttrVal( $name, 'PLZ', "" );
+    my $attrINTERVAL     = AttrVal( $name, 'INTERVAL','');
+    my $attrdownload     = AttrVal( $name, 'download','');
+    my $attrsavepath     = AttrVal( $name, 'savepath','');
+    my $maps2fetch       = AttrVal( $name, 'maps','');
+    
+    ## begin redundant Reading switch
+    my $attrhumanreadable = AttrVal( $name, 'humanreadable','');
+    ## end redundant Reading switch
+    
+    # preset CountryCode
+    if ($attrCountryCode eq "") {
+    
+        $UWZ_CC = "DE";
+    } else {
+    
+        $UWZ_CC = $attrCountryCode;
+    }
+    
+    # preset INTERVAL
+    if ($attrINTERVAL eq "") {
+    
+        $UWZ_INT = 3600;
+    } else {
+    
+        $UWZ_INT = $attrINTERVAL;
+    }
+    
+    # preset download
+    if ($attrdownload eq "") {
+    
+        $UWZ_download = 0;
+    } else {
+    
+        $UWZ_download = $attrdownload;
+    }
+    
+    # preset savepath
+    if ($attrsavepath eq "") {
+    
+        $UWZ_savepath = "/tmp/";
+    } else {
+    
+        $UWZ_savepath = $attrsavepath;
+    }
+    
+    # preset humanreadable
+    if ($attrhumanreadable eq "") {
+    
+        $UWZ_humanreadable = 0;
+    } else {
+    
       $UWZ_humanreadable = $attrhumanreadable;
-   }
-
-   if ( $UWZ_download == 1 ) {
-     if ( ! defined($maps2fetch) ) { $maps2fetch = "deutschland"; }
-     UWZ_Log $hash, 3, "Maps2Fetch : ".$maps2fetch;
-     my @maps = split(' ', $maps2fetch);
-     my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
-     foreach my $smap (@maps) {
-       UWZ_Log $hash, 3, "Download map : ".$smap;
-       my $img = UWZ_Map2Image($hash,$smap);
-       if (!defined($img) ) { $img=$uwz_de_url.'deutschland_index.png'; }
-       my $code = getstore($img, $UWZ_savepath.$smap.".png");
-       if($code == 200) {
-          UWZ_Log $hash, 3, "Successfully downloaded map ".$smap;
-       } else {
-          UWZ_Log $hash, 3, "Failed to download map (".$img.")";
-       }
-     } 
-
-   }
-
-
-   # acquire the json-response
-   my $response = UWZ_JSONAcquire($hash,$hash->{URL}); 
-
-
-   UWZ_Log $hash, 5, length($response)." characters captured";
-   my $converter = Text::Iconv->new("windows-1252","UTF-8");
-   my $uwz_warnings = JSON->new->ascii->decode($response);
-   my $enc = guess_encoding($uwz_warnings);
-
-   my $uwz_warncount = scalar(@{ $uwz_warnings->{'results'} });
-   UWZ_Log $hash, 3, "There are ".$uwz_warncount." warnings active";
-
-   my $message;
-   my $i=0;
-   my %typenames = ( "1" => "unknown",     # <===== FIX HERE
-                     "2" => "sturm", 
-                     "3" => "schnee",
-                     "4" => "regen",
-                     "5" => "temperatur",
-                     "6" => "waldbrand",     
-                     "7" => "gewitter",     
-                     "8" => "strassenglaette",
-                     "9" => "temperatur",    # 9 = hitzewarnung
-                    "10" => "glatteisregen",
-                    "11" => "temperatur" ); # 11 = bodenfrost
-   my %severitycolor = ( "0" => "green", 
-                         "1" => "unknown", # <===== FIX HERE
-                         "2" => "unknown", # <===== FIX HERE
-                         "3" => "unknown", # <===== FIX HERE
-                         "4" => "orange",
-                         "5" => "unknown", # <===== FIX HERE
-                         "6" => "unknown", # <===== FIX HERE
-                         "7" => "orange",
-                         "8" => "gelb",
-                         "9" => "gelb", # <===== FIX HERE
-                        "10" => "orange",
-                        "11" => "rot",
-                        "12" => "violet" );
-
-   foreach my $single_warning (@{ $uwz_warnings->{'results'} }){
-
-      UWZ_Log $hash, 3, "Warn_".$i."_Type: ".$single_warning->{'type'};
-      $message .= "Warn_".$i."_Type|".$single_warning->{'type'}."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_uwzLevel: ".$single_warning->{'payload'}{'uwzLevel'};
-      $message .= "Warn_".$i."_uwzLevel|".$single_warning->{'payload'}{'uwzLevel'}."|";
-
-      UWZ_Log $hash, 3, "Warn_".$i."_Severity: ".$single_warning->{'severity'};
-      $message .= "Warn_".$i."_Severity|".$single_warning->{'severity'}."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_Start: ".$single_warning->{'dtgStart'};
-      $message .= "Warn_".$i."_Start|".$single_warning->{'dtgStart'}."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_End: ".$single_warning->{'dtgEnd'};
-      $message .= "Warn_".$i."_End|".$single_warning->{'dtgEnd'}."|";
-
-## Begin of redundant Reading
-      if ( $UWZ_humanreadable eq 1 ) {
-      UWZ_Log $hash, 3, "Warn_".$i."_Start_Date: ".strftime("%d.%m.%Y", localtime($single_warning->{'dtgStart'}));
-      $message .= "Warn_".$i."_Start_Date|".strftime("%d.%m.%Y", localtime($single_warning->{'dtgStart'}))."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_Start_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgStart'}));
-      $message .= "Warn_".$i."_Start_Time|".strftime("%H:%M", localtime($single_warning->{'dtgStart'}))."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_End_Date: ".strftime("%d.%m.%Y", localtime($single_warning->{'dtgEnd'}));
-      $message .= "Warn_".$i."_End_Date|".strftime("%d.%m.%Y", localtime($single_warning->{'dtgEnd'}))."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_End_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}));
-      $message .= "Warn_".$i."_End_Time|".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}))."|";
-      }
-## End of redundant Reading
-
-
-
-      UWZ_Log $hash, 3, "Warn_".$i."_levelName: ".$single_warning->{'payload'}{'levelName'};
-      $message .= "Warn_".$i."_levelName|".$single_warning->{'payload'}{'levelName'}."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_LongText: ".$enc->decode($single_warning->{'payload'}{'translationsLongText'}{'DE'});
-      $message .= "Warn_".$i."_LongText|".$converter->convert($single_warning->{'payload'}{'translationsLongText'}{'DE'})."|";
-      UWZ_Log $hash, 3, "Warn_".$i."_ShortText: ".$enc->decode($single_warning->{'payload'}{'translationsShortText'}{'DE'});
-      $message .= "Warn_".$i."_ShortText|".$converter->convert($single_warning->{'payload'}{'translationsShortText'}{'DE'})."|";
-
-      UWZ_Log $hash, 3, "Warn_".$i."_IconURL: http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".gif";
-      $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$severitycolor{ $single_warning->{'severity'} }.".gif|";
-
-## Hagel start
-my $hagelcount = my @hagelmatch = $single_warning->{'payload'}{'translationsLongText'}{'DE'} =~ /Hagel/g;
-if ( $hagelcount ne 0 ) {
-      UWZ_Log $hash, 3, "Warn_".$i."_Hail: 1";
-      $message .= "Warn_".$i."_Hail|1|";
-} else {
-      UWZ_Log $hash, 3, "Warn_".$i."_Hail: 0";
-      $message .= "Warn_".$i."_Hail|0|";
-}
-## Hagel end
-
-      $i++;
-   }
-   $message .= "durationFetchReadings|";
-   $message .= sprintf "%.2f",  time() - $readingStartTime;
-   UWZ_Log $hash, 3, "Done fetching data";
-   UWZ_Log $hash, 3, "Will return : "."$name|$message|WarnCount|$uwz_warncount" ;
-   return "$name|$message|WarnCount|$uwz_warncount" ;
-}
-
-
-#####################################
-sub
-UWZAsHtml($;$)
-{
-  my ($hash,$items) = @_;
-  my $ret = '';
-  if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
-    $ret .= '<table><tr><td>';
-    $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
-  
-    for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
-      $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
-      $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
-      $ret .= ReadingsVal($hash, "Warn_".$i."_LongText", "").'<br><br>';
-  
-      $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
-      $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>
-  ';
-      $ret .= '</tr></table>';
-      $ret .= '</td></tr>';
     }
-  
-  
-    $ret .= '</table>';
-    $ret .= '</td></tr>';
-    $ret .= '</table>';
-  } else {
-    $ret .= '<table><tr><td>';
-    $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
-    $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
-    $ret .='<b>Keine Warnungen</b>';
-    $ret .= '</td></tr>';
-    $ret .= '</table>';
-    $ret .= '</td></tr>';
-    $ret .= '</table>';
-  }
 
-  return $ret;
-}
+    if ( $UWZ_download == 1 ) {
+        if ( ! defined($maps2fetch) ) { $maps2fetch = "deutschland"; }
+            UWZ_Log $hash, 4, "Maps2Fetch : ".$maps2fetch;
+            my @maps = split(' ', $maps2fetch);
+            my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
+            
+            foreach my $smap (@maps) {
+                UWZ_Log $hash, 4, "Download map : ".$smap;
+                my $img = UWZ_Map2Image($hash,$smap);
+                
+                if (!defined($img) ) { $img=$uwz_de_url.'deutschland_index.png'; }
+                    my $code = getstore($img, $UWZ_savepath.$smap.".png");
+                    
+                    if($code == 200) {
+                        UWZ_Log $hash, 4, "Successfully downloaded map ".$smap;
+                        
+                    } else {
+                    
+                UWZ_Log $hash, 3, "Failed to download map (".$img.")";
+            }
+        } 
 
-#####################################
-sub
-UWZAsHtmlLite($;$)
-{
-  my ($hash,$items) = @_;
-  my $ret = '';
-  if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
-
-    $ret .= '<table><tr><td>';
-    $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
-  
-    for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
-      $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
-      $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
-  
-      $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
-      $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>
-  ';
-      $ret .= '</tr></table>';
-      $ret .= '</td></tr>';
     }
-  
-  
-    $ret .= '</table>';
-    $ret .= '</td></tr>';
-    $ret .= '</table>';
-  } else {
-    $ret .= '<table><tr><td>';
-    $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
-    $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
-    $ret .='<b>Keine Warnungen</b>';
-    $ret .= '</td></tr>';
-    $ret .= '</table>';
-    $ret .= '</td></tr>';
-    $ret .= '</table>';
-  }
 
-  return $ret;
+    # acquire the json-response
+    my $response = UWZ_JSONAcquire($hash,$hash->{URL}); 
+
+    UWZ_Log $hash, 5, length($response)." characters captured";
+    my $converter = Text::Iconv->new("windows-1252","UTF-8");
+    my $uwz_warnings = JSON->new->ascii->decode($response);
+    my $enc = guess_encoding($uwz_warnings);
+
+    my $uwz_warncount = scalar(@{ $uwz_warnings->{'results'} });
+    UWZ_Log $hash, 4, "There are ".$uwz_warncount." warnings active";
+
+    my $message;
+    my $i=0;
+    
+    my %typenames       = ( "1" => "unknown",     # <===== FIX HERE
+                            "2" => "sturm", 
+                            "3" => "schnee",
+                            "4" => "regen",
+                            "5" => "temperatur",
+                            "6" => "waldbrand",     
+                            "7" => "gewitter",     
+                            "8" => "strassenglaette",
+                            "9" => "temperatur",    # 9 = hitzewarnung
+                            "10" => "glatteisregen",
+                            "11" => "temperatur" ); # 11 = bodenfrost
+                        
+    my %severitycolor   = ( "0" => "green", 
+                            "1" => "unknown", # <===== FIX HERE
+                            "2" => "unknown", # <===== FIX HERE
+                            "3" => "unknown", # <===== FIX HERE
+                            "4" => "orange",
+                            "5" => "unknown", # <===== FIX HERE
+                            "6" => "unknown", # <===== FIX HERE
+                            "7" => "orange",
+                            "8" => "gelb",
+                            "9" => "gelb", # <===== FIX HERE
+                            "10" => "orange",
+                            "11" => "rot",
+                            "12" => "violet" );
+
+    foreach my $single_warning (@{ $uwz_warnings->{'results'} }) {
+
+        UWZ_Log $hash, 4, "Warn_".$i."_Type: ".$single_warning->{'type'};
+        $message .= "Warn_".$i."_Type|".$single_warning->{'type'}."|";
+        
+        UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel: ".$single_warning->{'payload'}{'uwzLevel'};
+        $message .= "Warn_".$i."_uwzLevel|".$single_warning->{'payload'}{'uwzLevel'}."|";
+
+        UWZ_Log $hash, 4, "Warn_".$i."_Severity: ".$single_warning->{'severity'};
+        $message .= "Warn_".$i."_Severity|".$single_warning->{'severity'}."|";
+        
+        UWZ_Log $hash, 4, "Warn_".$i."_Start: ".$single_warning->{'dtgStart'};
+        $message .= "Warn_".$i."_Start|".$single_warning->{'dtgStart'}."|";
+        
+        UWZ_Log $hash, 4, "Warn_".$i."_End: ".$single_warning->{'dtgEnd'};
+        $message .= "Warn_".$i."_End|".$single_warning->{'dtgEnd'}."|";
+
+        ## Begin of redundant Reading
+        if ( $UWZ_humanreadable eq 1 ) {
+            UWZ_Log $hash, 4, "Warn_".$i."_Start_Date: ".strftime("%d.%m.%Y", localtime($single_warning->{'dtgStart'}));
+            $message .= "Warn_".$i."_Start_Date|".strftime("%d.%m.%Y", localtime($single_warning->{'dtgStart'}))."|";
+            
+            UWZ_Log $hash, 4, "Warn_".$i."_Start_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgStart'}));
+            $message .= "Warn_".$i."_Start_Time|".strftime("%H:%M", localtime($single_warning->{'dtgStart'}))."|";
+            
+            UWZ_Log $hash, 4, "Warn_".$i."_End_Date: ".strftime("%d.%m.%Y", localtime($single_warning->{'dtgEnd'}));
+            $message .= "Warn_".$i."_End_Date|".strftime("%d.%m.%Y", localtime($single_warning->{'dtgEnd'}))."|";
+            
+            UWZ_Log $hash, 4, "Warn_".$i."_End_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}));
+            $message .= "Warn_".$i."_End_Time|".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}))."|";
+        }
+        ## End of redundant Reading
+
+        UWZ_Log $hash, 4, "Warn_".$i."_levelName: ".$single_warning->{'payload'}{'levelName'};
+        $message .= "Warn_".$i."_levelName|".$single_warning->{'payload'}{'levelName'}."|";
+        
+        UWZ_Log $hash, 4, "Warn_".$i."_LongText: ".$enc->decode($single_warning->{'payload'}{'translationsLongText'}{'DE'});
+        $message .= "Warn_".$i."_LongText|".$converter->convert($single_warning->{'payload'}{'translationsLongText'}{'DE'})."|";
+        
+        UWZ_Log $hash, 4, "Warn_".$i."_ShortText: ".$enc->decode($single_warning->{'payload'}{'translationsShortText'}{'DE'});
+        $message .= "Warn_".$i."_ShortText|".$converter->convert($single_warning->{'payload'}{'translationsShortText'}{'DE'})."|";
+
+        UWZ_Log $hash, 4, "Warn_".$i."_IconURL: http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".gif";
+        $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$severitycolor{ $single_warning->{'severity'} }.".gif|";
+
+        
+        ## Hagel start
+        my $hagelcount = my @hagelmatch = $single_warning->{'payload'}{'translationsLongText'}{'DE'} =~ /Hagel/g;
+            if ( $hagelcount ne 0 ) {
+            
+                UWZ_Log $hash, 4, "Warn_".$i."_Hail: 1";
+                $message .= "Warn_".$i."_Hail|1|";
+                
+            } else {
+            
+                UWZ_Log $hash, 4, "Warn_".$i."_Hail: 0";
+                $message .= "Warn_".$i."_Hail|0|";
+            }
+        ## Hagel end
+
+        $i++;
+    }
+    
+    $message .= "durationFetchReadings|";
+    $message .= sprintf "%.2f",  time() - $readingStartTime;
+    
+    UWZ_Log $hash, 3, "Done fetching data";
+    UWZ_Log $hash, 4, "Will return : "."$name|$message|WarnCount|$uwz_warncount" ;
+    
+    return "$name|$message|WarnCount|$uwz_warncount" ;
 }
 
 
 #####################################
-sub
-UWZAsHtmlFP($;$)
-{
-  my ($hash,$items) = @_;
-  my $tablewidth = ReadingsVal($hash, "WarnCount", "") * 80;
-  my $ret = '';
-  $ret .= '<table class="uwz-fp" style="width:'.$tablewidth.'px"><tr><th></th><th></th></tr>';
-  $ret .= "<tr>";
-  for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
-    $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
-  }
-  $ret .= "</tr>";
+sub UWZAsHtml($;$) {
 
-  $ret .= '</table>';
+    my ($hash,$items) = @_;
+    my $ret = '';
+    
+    if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
+    
+        $ret .= '<table><tr><td>';
+        $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
+        
+        for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
+        
+            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
+            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
+            $ret .= ReadingsVal($hash, "Warn_".$i."_LongText", "").'<br><br>';
+  
+            $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
+            
+            $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>';
+            $ret .= '</tr></table>';
+            $ret .= '</td></tr>';
+        }
+  
+        $ret .= '</table>';
+        $ret .= '</td></tr>';
+        $ret .= '</table>';
+        
+    } else {
+    
+        $ret .= '<table><tr><td>';
+        $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
+        $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
+        $ret .='<b>Keine Warnungen</b>';
+        $ret .= '</td></tr>';
+        $ret .= '</table>';
+        $ret .= '</td></tr>';
+        $ret .= '</table>';
+    }
 
-  return $ret;
+    return $ret;
+}
+
+#####################################
+sub UWZAsHtmlLite($;$) {
+
+    my ($hash,$items) = @_;
+    my $ret = '';
+    
+    if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
+
+        $ret .= '<table><tr><td>';
+        $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
+  
+        for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
+        
+            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
+            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
+            $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
+            
+            $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>';
+            $ret .= '</tr></table>';
+            $ret .= '</td></tr>';
+        
+        }
+        
+        $ret .= '</table>';
+        $ret .= '</td></tr>';
+        $ret .= '</table>';
+        
+    } else {
+  
+        $ret .= '<table><tr><td>';
+        $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
+        $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
+        $ret .='<b>Keine Warnungen</b>';
+        $ret .= '</td></tr>';
+        $ret .= '</table>';
+        $ret .= '</td></tr>';
+        $ret .= '</table>';
+    }
+
+    return $ret;
+}
+
+#####################################
+sub UWZAsHtmlFP($;$) {
+
+    my ($hash,$items) = @_;
+    my $tablewidth = ReadingsVal($hash, "WarnCount", "") * 80;
+    my $ret = '';
+    
+    $ret .= '<table class="uwz-fp" style="width:'.$tablewidth.'px"><tr><th></th><th></th></tr>';
+    $ret .= "<tr>";
+    
+    for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
+        $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
+    }
+    
+    $ret .= "</tr>";
+    $ret .= '</table>';
+
+    return $ret;
 }
 
 
 #####################################
-sub
-UWZAsHtmlKarteLand($$)
-{
-  my ($hash,$land) = @_;
-#     my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
-#     my $uwz_at_url = "http://unwetter.wetteralarm.at/images/map/";
-  my $url = UWZ_Map2Image($hash,$land);
+sub UWZAsHtmlKarteLand($$) {
 
-  my $ret = '<table><tr><td>';
-  $ret .= '<table class="block wide">';
-  $ret .= '<tr class="even"><td>';
-  if(defined($url)) {
-    $ret .= '<img src="'.$url.'">';
-  } else {
-    $ret .= 'unbekannte Landbezeichnung';
-  }
-  $ret .= '</td></tr></table></td></tr>';
-  $ret .= '</table>';
-  return $ret;
+    my ($hash,$land) = @_;
+    # my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
+    # my $uwz_at_url = "http://unwetter.wetteralarm.at/images/map/";
+    my $url = UWZ_Map2Image($hash,$land);
+    my $ret = '<table><tr><td>';
+    
+    $ret .= '<table class="block wide">';
+    $ret .= '<tr class="even"><td>';
+    
+    if(defined($url)) {
+        $ret .= '<img src="'.$url.'">';
+        
+    } else {
+    
+        $ret .= 'unbekannte Landbezeichnung';
+    }
+    
+    $ret .= '</td></tr></table></td></tr>';
+    $ret .= '</table>';
+    
+    return $ret;
 }
-
 
 ##################################### 
 1;
@@ -718,7 +777,6 @@ UWZAsHtmlKarteLand($$)
 
 =pod
 =begin html
-
 
 <a name="UWZ"></a>
 <h3>UWZ</h3>
