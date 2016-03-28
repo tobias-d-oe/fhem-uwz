@@ -3,7 +3,9 @@
 #  77_UWZ.pm
 #
 #  (c) 2015 Tobias D. Oestreicher
-#  (c) 2016 Copyright: Marko Oldenburg (leongaultier at gmail dot com)
+#
+#  Special thanks goes to comitters:
+#    - Marko Oldenburg (leongaultier at gmail dot com)
 #  
 #  Storm warnings from unwetterzentrale.de
 #  inspired by 59_PROPLANTA.pm
