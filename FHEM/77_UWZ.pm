@@ -43,7 +43,7 @@ package main;
 use strict;
 use feature qw/say switch/;
 use warnings;
-no warnings 'experimental::lexical_subs','experimental::smartmatch';
+#no warnings 'experimental::lexical_subs','experimental::smartmatch';
 
 my $missingModul;
 eval "use LWP::UserAgent;1" or $missingModul .= "LWP::UserAgent ";
@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "0.5.2";
+my $version         = "0.5.3";
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -595,6 +595,9 @@ sub UWZ_Run($) {
             
             UWZ_Log $hash, 4, "Warn_".$i."_End_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}));
             $message .= "Warn_".$i."_End_Time|".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}))."|";
+
+            UWZ_Log $hash, 4, "Warn_".$i."_Type_Str: ".ucfirst($typenames{ $single_warning->{'type'} });
+            $message .= "Warn_".$i."_Type_Str|".ucfirst($typenames{ $single_warning->{'type'} })."|";
         }
         ## End of redundant Reading
 
