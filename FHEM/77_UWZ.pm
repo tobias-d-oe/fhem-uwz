@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "0.5.3";
+my $version         = "1.0.0";
 
 my $countrycode = "DE";
 my $plz = "77777";
