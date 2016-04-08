@@ -785,7 +785,6 @@ sub UWZAsHtmlKarteLand($$) {
 
 <a name="UWZ"></a>
 <h3>UWZ</h3>
-<div  style="width:800px"> 
 <ul>
    <a name="UWZdefine"></a>
    This modul extracts thunderstorm warnings from <a href="http://www.unwetterzentrale.de">www.unwetterzentrale.de</a>.
@@ -1011,8 +1010,7 @@ sub UWZAsHtmlKarteLand($$) {
    <br>
  
 
-</ul>
-</div> 
+</ul> 
 
 
 
@@ -1021,8 +1019,7 @@ sub UWZAsHtmlKarteLand($$) {
 =begin html_DE
 
 <a name="UWZ"></a>
-<h3>UWZ</h3>
-<div  style="width:800px"> 
+<h3>UWZ</h3> 
 <ul>
    <a name="UWZdefine"></a>
    Das Modul extrahiert Unwetterwarnungen von <a href="http://www.unwetterzentrale.de">www.unwetterzentrale.de</a>.
@@ -1252,7 +1249,6 @@ sub UWZAsHtmlKarteLand($$) {
  
 
 </ul>
-</div> 
 
 =end html_DE
 =cut
