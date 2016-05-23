@@ -43,7 +43,7 @@ package main;
 use strict;
 use feature qw/say switch/;
 use warnings;
-#no warnings 'experimental::lexical_subs','experimental::smartmatch';
+no if $] >= 5.017011, warnings => 'experimental::lexical_subs','experimental::smartmatch';
 
 my $missingModul;
 eval "use LWP::UserAgent;1" or $missingModul .= "LWP::UserAgent ";
@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.0.0";
+my $version         = "1.0.1";
 
 my $countrycode = "DE";
 my $plz = "77777";
