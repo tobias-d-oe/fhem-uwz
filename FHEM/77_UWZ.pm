@@ -939,8 +939,8 @@ sub UWZAsHtmlKarteLand($$) {
         <li><b>3</b> - snow</li>
         <li><b>4</b> - rain</li>
         <li><b>5</b> - frost</li>
-        <li><b>6</b> - thunderstorm</li>
-        <li><b>7</b> - forest fire</li>
+        <li><b>6</b> - forest fire</li>
+        <li><b>7</b> - thunderstorm</li>
         <li><b>8</b> - glaze</li>
         <li><b>9</b> - heat</li>
         <li><b>10</b> - freezing rain</li>
@@ -1175,8 +1175,8 @@ sub UWZAsHtmlKarteLand($$) {
         <li><b>3</b> - Schneefall</li>
         <li><b>4</b> - Regen</li>
         <li><b>5</b> - Extremfrost</li>
-        <li><b>6</b> - Gewitter</li>
-        <li><b>7</b> - Waldbrandgefahr</li>
+        <li><b>6</b> - Waldbrandgefahr</li>
+        <li><b>7</b> - Gewitter</li>
         <li><b>8</b> - Glätte</li>
         <li><b>9</b> - Hitze</li>
         <li><b>10</b> - Glatteisregen</li>
