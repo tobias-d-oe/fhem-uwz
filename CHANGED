@@ -1,3 +1,7 @@
+-2016-05-30
+  - Bugfix commandref
+  - unterdrücken der experimental Warnmeldung 
+
 -2016-04-07
   - official release 1.0.0
 
