@@ -987,7 +987,7 @@ sub UWZAsHtmlKarteLand($$) {
           <li>sachsen</li>
           <li>sachsen-anhalt</li>
           <li>thueringen</li>
-          <li>nordrhein-westfale</li>
+          <li>nordrhein-westfalen</li>
           <li>mecklenburg-vorpommern</li>
           <li>schleswig-holstein</li>
           <li>hamburg</li>
