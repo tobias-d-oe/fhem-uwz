@@ -38,6 +38,25 @@
 ##############################################
 
 
+### Wünsche von Usern
+## 
+## Hi,
+## benutze jetzt seid einigen Tagen erfolgreich das UWZ Modul.
+## Habe da noch einen kleinen wunsch zum weblink:
+## Könnte mal das attribut htmlattr mit einbinden?
+## attr Unwetterzentrale htmlattr width="220" height="330"
+## https://forum.fhem.de/index.php/topic,51233.msg461384.html#msg461384
+##
+##
+
+
+
+
+
+
+
+
+
 
 package main;
 use strict;
@@ -1223,7 +1242,7 @@ sub UWZAsHtmlKarteLand($$) {
           <li>sachsen</li>
           <li>sachsen-anhalt</li>
           <li>thueringen</li>
-          <li>nordrhein-westfale</li>
+          <li>nordrhein-westfalen</li>
           <li>mecklenburg-vorpommern</li>
           <li>schleswig-holstein</li>
           <li>hamburg</li>
