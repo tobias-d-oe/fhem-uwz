@@ -699,7 +699,7 @@ sub UWZAsHtml($;$) {
     if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
     
         $ret .= '<table><tr><td>';
-        $ret .= '<table class="block wide" '.$attr.'><tr><th></th><th></th></tr>';
+        $ret .= '<table class="block" '.$attr.'><tr><th></th><th></th></tr>';
         
         for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
         
@@ -707,7 +707,7 @@ sub UWZAsHtml($;$) {
             $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
             $ret .= ReadingsVal($hash, "Warn_".$i."_LongText", "").'<br><br>';
   
-            $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
+            $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
             
             # language by AttrVal
             $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "UK" );
