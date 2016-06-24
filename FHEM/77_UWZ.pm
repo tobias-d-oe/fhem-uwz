@@ -170,6 +170,7 @@ sub UWZ_Initialize($) {
                         "savepath ".
                         "maps ".
                         "humanreadable:0,1 ".
+                        "htmlattr ".
                         $readingFnAttributes;
    
     foreach my $d(sort keys %{$modules{UWZ}{defptr}}) {
@@ -693,11 +694,12 @@ sub UWZAsHtml($;$) {
 
     my ($hash,$items) = @_;
     my $ret = '';
-    
+    my $attr = AttrVal($hash, "htmlattr", "");
+ 
     if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
     
         $ret .= '<table><tr><td>';
-        $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
+        $ret .= '<table class="block wide" '.$attr.'><tr><th></th><th></th></tr>';
         
         for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
         
