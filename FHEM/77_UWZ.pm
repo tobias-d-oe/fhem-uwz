@@ -38,19 +38,6 @@
 ##############################################
 
 
-## uwzLevel ## Severity ## levelName            ## realLevelColor ## UWZ Web Name 
-##        7 ##        7 ## alert_forwarn_orange ## yellow         ## Stufe Gelb (Vorwarnung für Unwetterwarnung)
-## 
-##
-##
-##
-##
-##
-##
-##
-
-
-
 
 package main;
 use strict;
@@ -403,7 +390,6 @@ sub UWZ_Start($) {
    
     return unless (defined($hash->{NAME}));
    
-    #$hash->{INTERVAL} = AttrVal( $name, "INTERVAL",  $hash->{INTERVAL} );
     if(!$hash->{fhem}{LOCAL} && $hash->{INTERVAL} > 0) {        # set up timer if automatically call
     
         RemoveInternalTimer( $hash );
@@ -411,7 +397,6 @@ sub UWZ_Start($) {
         return undef if( AttrVal($name, "disable", 0 ) == 1 );
     }
    
-    #if ( AttrVal( $name, 'URL', '') eq '' && not defined( $hash->{URL} ) ) {
     if ( not defined( $hash->{URL} ) ) {
 
         UWZ_Log $hash, 3, "missing URL";
@@ -641,8 +626,8 @@ sub UWZ_Run($) {
         UWZ_Log $hash, 4, "Warn_".$i."_Type: ".$single_warning->{'type'};
         $message .= "Warn_".$i."_Type|".$single_warning->{'type'}."|";
         
-        UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel: ".$single_warning->{'payload'}{'uwzLevel'};
-        $message .= "Warn_".$i."_uwzLevel|".$single_warning->{'payload'}{'uwzLevel'}."|";
+        UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel: ".UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'}));
+        $message .= "Warn_".$i."_uwzLevel|".UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'}))."|";
 
         UWZ_Log $hash, 4, "Warn_".$i."_Severity: ".$single_warning->{'severity'};
         $message .= "Warn_".$i."_Severity|".$single_warning->{'severity'}."|";
@@ -672,9 +657,28 @@ sub UWZ_Run($) {
             if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
                 UWZ_Log $hash, 4, "Warn_".$i."_Type_Str: ".$typenames_de_str{ $single_warning->{'type'} };
                 $message .= "Warn_".$i."_Type_Str|".$typenames_de_str{ $single_warning->{'type'} }."|";
+                my %uwzlevelname = ( "0" => "Stufe Grün (keine Warnung)",
+                                     "1" => "Stufe Dunkelgrün (Wetterhinweise)",
+                                     "2" => "Stufe Gelb (Vorwarnung für Unwetterwarnung)",
+                                     "3" => "Warnstufe Orange (Unwetterwarnung)",
+                                     "4" => "Warnstufe Rot (Unwetterwarnung)",
+                                     "5" => "Warnstufe Violett (Unwetterwarnung)");
+                UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel_Str: ".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) };
+                $message .= "Warn_".$i."_uwzLevel_Str|".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) }."|";
+
+
             } else {
                 UWZ_Log $hash, 4, "Warn_".$i."_Type_Str: ".$typenames_en_str{ $single_warning->{'type'} };
                 $message .= "Warn_".$i."_Type_Str|".$typenames_en_str{ $single_warning->{'type'} }."|";
+                my %uwzlevelname = ( "0" => "level green (no warnings)",
+                                     "1" => "level dark green (weather notice)",
+                                     "2" => "level yellow (severe weather watch)",
+                                     "3" => "Alert level Orange",
+                                     "4" => "Alert level Red",
+                                     "5" => "Alert level Violet");
+                UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel_Str: ".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) };
+                $message .= "Warn_".$i."_uwzLevel_Str|".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) }."|";
+
             }
 
         }
@@ -703,7 +707,8 @@ sub UWZ_Run($) {
         # end language by AttrVal
 
         UWZ_Log $hash, 4, "Warn_".$i."_IconURL: http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".gif";
-        $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$severitycolor{ $single_warning->{'severity'} }.".gif|";
+        $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".UWZ_GetSeverityColor($hash, $single_warning->{'payload'}{'levelName'} ).".gif|";
+
 
         
         ## Hagel start
@@ -923,11 +928,50 @@ sub UWZAsHtmlKarteLand($$) {
 
 
 #####################################
+sub UWZ_GetSeverityColor($$) {
+    my ($name,$warnname) = @_;
+    my @alert = split(/_/,$warnname);
+    if ( @alert[1] eq "forewarn" ) {
+        return "gelb";
+    } else {
+        return @alert[2];
+    }
+}
+
+
+#####################################
+sub UWZ_GetUWZLevel($$) {
+    my ($name,$severitycolor) = @_;
+    my %UWZSeverity = ( "green" => "0",
+                        "darkgreen" => "1",
+                        "gelb" => "2",
+                        "orange" => "3",
+                        "red" => "4",
+                        "violet" => "5");
+    return $UWZSeverity{$severitycolor};
+}
+
+
+#####################################
 ##
 ##      UWZ Helper Functions
 ##
 #####################################
+sub UWZWarn($$) {
+    my ($name,$event) = @_;
+    my $hash          = $defs{$name}; 
+    my $wNb           = ReadingsVal( $name, "WarnCount", 0 ) - 1;
 
+    if( ReadingsVal( $name, "WarnCount", 0 ) > ReadingsVal( $name, "lastWarnCount", 0 ) && ($event) > 0 ) {
+        return 1;
+    }
+
+    readingsSingleUpdate ( $hash, "lastWarnCount", $wNb, 0 );
+    return 0;
+}
+
+
+#####################################
 sub UWZSearchLatLon($) {
     my ($loc)    = @_;
     my $url      = "http://alertspro.geoservice.meteogroup.de/weatherpro/SearchFeed.php?search=".$loc;
@@ -977,7 +1021,7 @@ sub UWZSearchLatLon($) {
     $ret .= '</table></td></tr>';
     $ret .= '</table></html>';
 
-    return $ret;
+    return $ret;#Dumper($search->{pois}->{poi});    
 
 }
 
@@ -998,8 +1042,8 @@ sub UWZSearchAreaID($$) {
     use JSON;
     my @perl_scalar = @{JSON->new->utf8->decode($response->content)};
 
-    my $CC     = substr @perl_scalar[0]->{'AREA_ID'}, 3, 2;
-    my $AreaID = substr @perl_scalar[0]->{'AREA_ID'}, 5, 5;   
+    my $CC     = substr $perl_scalar[0]->{'AREA_ID'}, 3, 2;
+    my $AreaID = substr $perl_scalar[0]->{'AREA_ID'}, 5, 5;   
 
     my $ret = '<html>Please use the following statement to define Unwetterzentrale for your location:<br /><br />';
     $ret   .= '<table width=100%><tr><td>';
