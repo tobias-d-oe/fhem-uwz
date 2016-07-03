@@ -38,19 +38,6 @@
 ##############################################
 
 
-### Wünsche von Usern
-## 
-## Hi,
-## benutze jetzt seid einigen Tagen erfolgreich das UWZ Modul.
-## Habe da noch einen kleinen wunsch zum weblink:
-## Könnte mal das attribut htmlattr mit einbinden?
-## attr Unwetterzentrale htmlattr width="220" height="330"
-## https://forum.fhem.de/index.php/topic,51233.msg461384.html#msg461384
-##
-##
-
-
-
 
 package main;
 use strict;
@@ -73,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.2.0";
+my $version         = "1.2.2";
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -100,12 +87,19 @@ sub UWZ_Map2Image($$) {
 
     my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
     my $uwz_at_url = "http://unwetter.wetteralarm.at/images/map/";
+    my $uwz_ch_url = "http://alarm.meteocentrale.ch/images/map/";
     my $uwz_en_url = "http://warnings.severe-weather-centre.co.uk/images/map/";
+    my $uwz_li_url = "http://alarm.meteocentrale.li/images/map/";
+
     my ( $hash, $smap ) = @_;
     my $lmap;
     
     $smap=lc($smap);
+
+    ## Euro
     $lmap->{'europa'}=$uwz_de_url.'europe_index.png';
+
+    ## DE
     $lmap->{'deutschland'}=$uwz_de_url.'deutschland_index.png';
     $lmap->{'deutschland-small'}=$uwz_de_url.'deutschland_preview.png';
     $lmap->{'niedersachsen'}=$uwz_de_url.'niedersachsen_index.png';
@@ -124,6 +118,8 @@ sub UWZ_Map2Image($$) {
     $lmap->{'hessen'}=$uwz_de_url.'hessen_index.png';
     $lmap->{'brandenburg'}=$uwz_de_url.'brandenburg_index.png';
     $lmap->{'berlin'}=$uwz_de_url.'brandenburg_index.png';
+
+    ## AT
     $lmap->{'oesterreich'}=$uwz_at_url.'oesterreich_index.png';
     $lmap->{'burgenland'}=$uwz_at_url.'burgenland_index.png';
     $lmap->{'kaernten'}=$uwz_at_url.'kaernten_index.png';
@@ -134,10 +130,14 @@ sub UWZ_Map2Image($$) {
     $lmap->{'tirol'}=$uwz_at_url.'tirol_index.png';
     $lmap->{'vorarlberg'}=$uwz_at_url.'vorarlberg_index.png';
     $lmap->{'wien'}=$uwz_at_url.'wien_index.png';
-    $lmap->{'isobaren1'}="http://www.unwetterzentrale.de/images/icons/UWZ_ISO_00.jpg";
-    $lmap->{'isobaren2'}="http://www.wetteralarm.at/uploads/pics/UWZ_EURO_ISO_GER_00.jpg";
-    
-    ## Maps of United Kingdom
+
+    ## CH
+    $lmap->{'schweiz'}=$uwz_ch_url.'schweiz_index.png';
+
+    ## LI
+    $lmap->{'liechtenstein'}=$uwz_li_url.'liechtenstein_index.png';
+
+    ## UK
     $lmap->{'unitedkingdom'}=$uwz_en_url.'unitedkingdom_index.png';
     $lmap->{'eastofengland'}=$uwz_en_url.'eastofengland_index.png';
     $lmap->{'eastmidlands'}=$uwz_en_url.'eastmidlands-index.png';
@@ -151,6 +151,12 @@ sub UWZ_Map2Image($$) {
     $lmap->{'wales'}=$uwz_en_url.'wales-index.png';
     $lmap->{'westmidlands'}=$uwz_en_url.'westmidlands-index.png';
     $lmap->{'yorkshireandthehumber'}=$uwz_en_url.'yorkshireandthehumber-index.png';
+
+    ## Isobaren
+    $lmap->{'isobaren1'}="http://www.unwetterzentrale.de/images/icons/UWZ_ISO_00.jpg";
+    $lmap->{'isobaren2'}="http://www.wetteralarm.at/uploads/pics/UWZ_EURO_ISO_GER_00.jpg";
+    $lmap->{'isobaren3'}="http://www.severe-weather-centre.co.uk/uploads/pics/UWZ_EURO_ISO_ENG_00.jpg";
+
     return $lmap->{$smap};
 }
 
@@ -162,14 +168,11 @@ sub UWZ_Initialize($) {
     $hash->{UndefFn}  = "UWZ_Undef";
     $hash->{SetFn}    = "UWZ_Set";
     $hash->{GetFn}    = "UWZ_Get";
-    $hash->{AttrList} = "INTERVAL ".
-                        "CountryCode ". # Added to set country/language
-                        "URL ".
-                        "PLZ ".
-                        "download:0,1 ".
+    $hash->{AttrList} = "download:0,1 ".
                         "savepath ".
                         "maps ".
                         "humanreadable:0,1 ".
+                        "htmlattr ".
                         $readingFnAttributes;
    
     foreach my $d(sort keys %{$modules{UWZ}{defptr}}) {
@@ -194,8 +197,13 @@ sub UWZ_Define($$) {
     $hash->{PLZ}             = $a[3];
     
     ## URL by CountryCode
-        $hash->{URL} =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=en&areaID=UWZ" . $a[2] . $a[3] if ( $hash->{CountryCode} eq "UK" );
-        $hash->{URL} =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=de&areaID=UWZ" . $a[2] . $a[3] if ( $hash->{CountryCode} eq "DE" );
+    my $URL_language="en";
+    if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        $URL_language="de";
+    }
+
+    $hash->{URL} =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=" . $URL_language . "&areaID=UWZ" . $a[2] . $a[3];
+
     
     $hash->{fhem}{LOCAL}     = 0;
     $hash->{INTERVAL}        = $a[4];
@@ -256,27 +264,48 @@ sub UWZ_Set($@) {
     return;
 }
 
-#####################################
+
 sub UWZ_Get($@) {
 
     my ( $hash, @a ) = @_;
     my $name    = $hash->{NAME};
-    my $usage   = "Unknown argument $a[1], choose one of Sturm:noArg Schneefall:noArg Regen:noArg Extremfrost:noArg Waldbrand:noArg Gewitter:noArg Glaette:noArg Hitze:noArg Glatteisregen:noArg Bodenfrost:noArg Hagel:noArg ";
- 
-    return $usage if ( @a < 2 );
    
-    if    ($a[1] =~ /^Sturm/)            { UWZ_GetCurrent($hash,2); }
-    elsif ($a[1] =~ /^Schneefall/)       { UWZ_GetCurrent($hash,3); }
-    elsif ($a[1] =~ /^Regen/)            { UWZ_GetCurrent($hash,4); }
-    elsif ($a[1] =~ /^Extremfrost/)      { UWZ_GetCurrent($hash,5); }
-    elsif ($a[1] =~ /^Waldbrand/)        { UWZ_GetCurrent($hash,6); }
-    elsif ($a[1] =~ /^Gewitter/)         { UWZ_GetCurrent($hash,7); }
-    elsif ($a[1] =~ /^Glaette/)          { UWZ_GetCurrent($hash,8); }
-    elsif ($a[1] =~ /^Hitze/)            { UWZ_GetCurrent($hash,9); }
-    elsif ($a[1] =~ /^Glatteisregen/)    { UWZ_GetCurrent($hash,10); }
-    elsif ($a[1] =~ /^Bodenfrost/)       { UWZ_GetCurrent($hash,11); }
-    elsif ($a[1] =~ /^Hagel/)            { UWZ_GetCurrentHail($hash); }
-    else                                 { return $usage; }
+    if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        my $usage   = "Unknown argument $a[1], choose one of Sturm:noArg Schneefall:noArg Regen:noArg Extremfrost:noArg Waldbrand:noArg Gewitter:noArg Glaette:noArg Hitze:noArg Glatteisregen:noArg Bodenfrost:noArg Hagel:noArg ";
+     
+        return $usage if ( @a < 2 );
+       
+        if    ($a[1] =~ /^Sturm/)            { UWZ_GetCurrent($hash,2); }
+        elsif ($a[1] =~ /^Schneefall/)       { UWZ_GetCurrent($hash,3); }
+        elsif ($a[1] =~ /^Regen/)            { UWZ_GetCurrent($hash,4); }
+        elsif ($a[1] =~ /^Extremfrost/)      { UWZ_GetCurrent($hash,5); }
+        elsif ($a[1] =~ /^Waldbrand/)        { UWZ_GetCurrent($hash,6); }
+        elsif ($a[1] =~ /^Gewitter/)         { UWZ_GetCurrent($hash,7); }
+        elsif ($a[1] =~ /^Glaette/)          { UWZ_GetCurrent($hash,8); }
+        elsif ($a[1] =~ /^Hitze/)            { UWZ_GetCurrent($hash,9); }
+        elsif ($a[1] =~ /^Glatteisregen/)    { UWZ_GetCurrent($hash,10); }
+        elsif ($a[1] =~ /^Bodenfrost/)       { UWZ_GetCurrent($hash,11); }
+        elsif ($a[1] =~ /^Hagel/)            { UWZ_GetCurrentHail($hash); }
+        else                                 { return $usage; }
+    } else {
+        my $usage   = "Unknown argument $a[1], choose one of storm:noArg snow:noArg rain:noArg extremfrost:noArg forest-fire:noArg thunderstorms:noArg glaze:noArg heat:noArg glazed-rain:noArg soil-frost:noArg hail:noArg ";
+        
+        return $usage if ( @a < 2 );
+    
+        if    ($a[1] =~ /^storm/)            { UWZ_GetCurrent($hash,2); }
+        elsif ($a[1] =~ /^snow/)             { UWZ_GetCurrent($hash,3); }
+        elsif ($a[1] =~ /^rain/)             { UWZ_GetCurrent($hash,4); }
+        elsif ($a[1] =~ /^extremfrost/)      { UWZ_GetCurrent($hash,5); }
+        elsif ($a[1] =~ /^forest-fire/)      { UWZ_GetCurrent($hash,6); }
+        elsif ($a[1] =~ /^thunderstorms/)    { UWZ_GetCurrent($hash,7); }
+        elsif ($a[1] =~ /^glaze/)            { UWZ_GetCurrent($hash,8); }
+        elsif ($a[1] =~ /^heat/)             { UWZ_GetCurrent($hash,9); }
+        elsif ($a[1] =~ /^glazed-rain/)      { UWZ_GetCurrent($hash,10); }
+        elsif ($a[1] =~ /^soil-frost/)       { UWZ_GetCurrent($hash,11); }
+        elsif ($a[1] =~ /^hail/)             { UWZ_GetCurrentHail($hash); }
+        else                                 { return $usage; }
+
+    }
 }
 
 #####################################
@@ -361,7 +390,6 @@ sub UWZ_Start($) {
    
     return unless (defined($hash->{NAME}));
    
-    $hash->{INTERVAL} = AttrVal( $name, "INTERVAL",  $hash->{INTERVAL} );
     if(!$hash->{fhem}{LOCAL} && $hash->{INTERVAL} > 0) {        # set up timer if automatically call
     
         RemoveInternalTimer( $hash );
@@ -369,7 +397,7 @@ sub UWZ_Start($) {
         return undef if( AttrVal($name, "disable", 0 ) == 1 );
     }
    
-    if ( AttrVal( $name, 'URL', '') eq '' && not defined( $hash->{URL} ) ) {
+    if ( not defined( $hash->{URL} ) ) {
 
         UWZ_Log $hash, 3, "missing URL";
         return;
@@ -429,8 +457,9 @@ sub UWZ_Done($) {
             my $newState;
             if (defined $values{WarnCount}) {
                 # Message by CountryCode
-                $newState = "Warnings: " . $values{WarnCount} if ( $hash->{CountryCode} eq "UK" );
-                $newState = "Warnungen: " . $values{WarnCount} if ( $hash->{CountryCode} eq "DE" );
+                
+                $newState = "Warnings: " . $values{WarnCount};
+                $newState = "Warnungen: " . $values{WarnCount} if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] );
                 # end Message by CountryCode
             } else {
                 $newState = "Error: Could not capture all data. Please check CountryCode and PLZ.";
@@ -457,8 +486,6 @@ sub UWZ_Run($) {
 
     my ($name) = @_;
     my $ptext=$name;
-    my $UWZ_CC;
-    my $UWZ_INT;
     my $UWZ_download;
     my $UWZ_savepath;
     my $UWZ_humanreadable;
@@ -469,9 +496,6 @@ sub UWZ_Run($) {
     return unless (defined($hash->{NAME}));
     
     my $readingStartTime = time();
-    my $attrCountryCode  = AttrVal( $name, 'CountryCode', '' );
-    my $attrPLZ          = AttrVal( $name, 'PLZ', "" );
-    my $attrINTERVAL     = AttrVal( $name, 'INTERVAL','');
     my $attrdownload     = AttrVal( $name, 'download','');
     my $attrsavepath     = AttrVal( $name, 'savepath','');
     my $maps2fetch       = AttrVal( $name, 'maps','');
@@ -479,24 +503,6 @@ sub UWZ_Run($) {
     ## begin redundant Reading switch
     my $attrhumanreadable = AttrVal( $name, 'humanreadable','');
     ## end redundant Reading switch
-    
-    # preset CountryCode
-    if ($attrCountryCode eq "") {
-    
-        $UWZ_CC = "DE";
-    } else {
-    
-        $UWZ_CC = $attrCountryCode;
-    }
-    
-    # preset INTERVAL
-    if ($attrINTERVAL eq "") {
-    
-        $UWZ_INT = 3600;
-    } else {
-    
-        $UWZ_INT = $attrINTERVAL;
-    }
     
     # preset download
     if ($attrdownload eq "") {
@@ -574,7 +580,33 @@ sub UWZ_Run($) {
                             "9" => "temperatur",    # 9 = hitzewarnung
                             "10" => "glatteisregen",
                             "11" => "temperatur" ); # 11 = bodenfrost
-                        
+
+    my %typenames_de_str= ( "1" => "unknown",     # <===== FIX HERE
+                            "2" => "Sturm",
+                            "3" => "Schnee",
+                            "4" => "Regen",
+                            "5" => "Temperatur",
+                            "6" => "Waldbrand",
+                            "7" => "Gewitter",
+                            "8" => "Strassenglaette",
+                            "9" => "Hitze",    # 9 = hitzewarnung
+                            "10" => "Glatteisregen",
+                            "11" => "Bodenfrost" ); # 11 = bodenfrost
+    
+
+    my %typenames_en_str= ( "1" => "unknown",     # <===== FIX HERE
+                            "2" => "storm",
+                            "3" => "snow",
+                            "4" => "rain",
+                            "5" => "temperatur",
+                            "6" => "forest fire",
+                            "7" => "thunderstorms",
+                            "8" => "slippery road",
+                            "9" => "heat",    # 9 = hitzewarnung
+                            "10" => "black ice rain",
+                            "11" => "soil frost" ); # 11 = bodenfrost
+
+                    
     my %severitycolor   = ( "0" => "green", 
                             "1" => "unknown", # <===== FIX HERE
                             "2" => "unknown", # <===== FIX HERE
@@ -594,8 +626,8 @@ sub UWZ_Run($) {
         UWZ_Log $hash, 4, "Warn_".$i."_Type: ".$single_warning->{'type'};
         $message .= "Warn_".$i."_Type|".$single_warning->{'type'}."|";
         
-        UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel: ".$single_warning->{'payload'}{'uwzLevel'};
-        $message .= "Warn_".$i."_uwzLevel|".$single_warning->{'payload'}{'uwzLevel'}."|";
+        UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel: ".UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'}));
+        $message .= "Warn_".$i."_uwzLevel|".UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'}))."|";
 
         UWZ_Log $hash, 4, "Warn_".$i."_Severity: ".$single_warning->{'severity'};
         $message .= "Warn_".$i."_Severity|".$single_warning->{'severity'}."|";
@@ -620,8 +652,35 @@ sub UWZ_Run($) {
             UWZ_Log $hash, 4, "Warn_".$i."_End_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}));
             $message .= "Warn_".$i."_End_Time|".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}))."|";
 
-            UWZ_Log $hash, 4, "Warn_".$i."_Type_Str: ".ucfirst($typenames{ $single_warning->{'type'} });
-            $message .= "Warn_".$i."_Type_Str|".ucfirst($typenames{ $single_warning->{'type'} })."|";
+
+            # Begin Language by AttrVal
+            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                UWZ_Log $hash, 4, "Warn_".$i."_Type_Str: ".$typenames_de_str{ $single_warning->{'type'} };
+                $message .= "Warn_".$i."_Type_Str|".$typenames_de_str{ $single_warning->{'type'} }."|";
+                my %uwzlevelname = ( "0" => "Stufe Grün (keine Warnung)",
+                                     "1" => "Stufe Dunkelgrün (Wetterhinweise)",
+                                     "2" => "Stufe Gelb (Vorwarnung für Unwetterwarnung)",
+                                     "3" => "Warnstufe Orange (Unwetterwarnung)",
+                                     "4" => "Warnstufe Rot (Unwetterwarnung)",
+                                     "5" => "Warnstufe Violett (Unwetterwarnung)");
+                UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel_Str: ".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) };
+                $message .= "Warn_".$i."_uwzLevel_Str|".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) }."|";
+
+
+            } else {
+                UWZ_Log $hash, 4, "Warn_".$i."_Type_Str: ".$typenames_en_str{ $single_warning->{'type'} };
+                $message .= "Warn_".$i."_Type_Str|".$typenames_en_str{ $single_warning->{'type'} }."|";
+                my %uwzlevelname = ( "0" => "level green (no warnings)",
+                                     "1" => "level dark green (weather notice)",
+                                     "2" => "level yellow (severe weather watch)",
+                                     "3" => "Alert level Orange",
+                                     "4" => "Alert level Red",
+                                     "5" => "Alert level Violet");
+                UWZ_Log $hash, 4, "Warn_".$i."_uwzLevel_Str: ".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) };
+                $message .= "Warn_".$i."_uwzLevel_Str|".$uwzlevelname{ UWZ_GetUWZLevel($hash,UWZ_GetSeverityColor($hash,$single_warning->{'payload'}{'levelName'})) }."|";
+
+            }
+
         }
         ## End of redundant Reading
         
@@ -629,38 +688,40 @@ sub UWZ_Run($) {
         $message .= "Warn_".$i."_levelName|".$single_warning->{'payload'}{'levelName'}."|";
         
         # Begin Language by AttrVal
-        if ( AttrVal( $name, 'CountryCode', '' ) eq "UK" ) {
-        
-            UWZ_Log $hash, 4, "Warn_".$i."_LongText: ".$enc->decode($single_warning->{'payload'}{'translationsLongText'}{'EN'});
-            $message .= "Warn_".$i."_LongText|".$converter->convert($single_warning->{'payload'}{'translationsLongText'}{'EN'})."|";
-        
-            UWZ_Log $hash, 4, "Warn_".$i."_ShortText: ".$enc->decode($single_warning->{'payload'}{'translationsShortText'}{'EN'});
-            $message .= "Warn_".$i."_ShortText|".$converter->convert($single_warning->{'payload'}{'translationsShortText'}{'EN'})."|";
-            
-        } else {
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
         
             UWZ_Log $hash, 4, "Warn_".$i."_LongText: ".$enc->decode($single_warning->{'payload'}{'translationsLongText'}{'DE'});
             $message .= "Warn_".$i."_LongText|".$converter->convert($single_warning->{'payload'}{'translationsLongText'}{'DE'})."|";
         
             UWZ_Log $hash, 4, "Warn_".$i."_ShortText: ".$enc->decode($single_warning->{'payload'}{'translationsShortText'}{'DE'});
             $message .= "Warn_".$i."_ShortText|".$converter->convert($single_warning->{'payload'}{'translationsShortText'}{'DE'})."|";
+            
+        } else {
+        
+            UWZ_Log $hash, 4, "Warn_".$i."_LongText: ".$enc->decode($single_warning->{'payload'}{'translationsLongText'}{'EN'});
+            $message .= "Warn_".$i."_LongText|".$converter->convert($single_warning->{'payload'}{'translationsLongText'}{'EN'})."|";
+        
+            UWZ_Log $hash, 4, "Warn_".$i."_ShortText: ".$enc->decode($single_warning->{'payload'}{'translationsShortText'}{'EN'});
+            $message .= "Warn_".$i."_ShortText|".$converter->convert($single_warning->{'payload'}{'translationsShortText'}{'EN'})."|";
         }
         # end language by AttrVal
 
         UWZ_Log $hash, 4, "Warn_".$i."_IconURL: http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".gif";
-        $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$severitycolor{ $single_warning->{'severity'} }.".gif|";
+        $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".UWZ_GetSeverityColor($hash, $single_warning->{'payload'}{'levelName'} ).".gif|";
+
 
         
         ## Hagel start
         my $hagelcount = 0;
         # Begin Language by AttrVal
-        if ( AttrVal( $name, 'CountryCode', '' ) eq "UK" ) {
         
-            $hagelcount = my @hagelmatch = $single_warning->{'payload'}{'translationsLongText'}{'EN'} =~ /Hail/g;
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        
+            $hagelcount = my @hagelmatch = $single_warning->{'payload'}{'translationsLongText'}{'DE'} =~ /Hagel/g;
             
         } else {
         
-            $hagelcount = my @hagelmatch = $single_warning->{'payload'}{'translationsLongText'}{'DE'} =~ /Hagel/g;
+            $hagelcount = my @hagelmatch = $single_warning->{'payload'}{'translationsLongText'}{'EN'} =~ /Hail/g;
         }
         # end language by AttrVal
         if ( $hagelcount ne 0 ) {
@@ -691,25 +752,37 @@ sub UWZ_Run($) {
 #####################################
 sub UWZAsHtml($;$) {
 
-    my ($hash,$items) = @_;
+    my ($name,$items) = @_;
     my $ret = '';
-    
-    if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
+    my $hash = $defs{$name};    
+
+    my $attr;
+    if (AttrVal($name, "htmlattr", "none") ne "none") {
+        $attr = AttrVal($name, "htmlattr", "");
+    } else {
+        $attr = 'width="100%"';
+    }
+
+
+    if (ReadingsVal($name, "WarnCount", "") != 0 ) {
     
         $ret .= '<table><tr><td>';
-        $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
+        $ret .= '<table class="block" '.$attr.'><tr><th></th><th></th></tr>';
         
-        for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
+        for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
         
-            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
-            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
-            $ret .= ReadingsVal($hash, "Warn_".$i."_LongText", "").'<br><br>';
+            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
+            $ret .= ReadingsVal($name, "Warn_".$i."_LongText", "").'<br><br>';
   
-            $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
+            $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
             
             # language by AttrVal
-            $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "UK" );
-            $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "DE" );
+            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+            } else {
+                $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+            }
             # end language by AttrVal
             $ret .= '</tr></table>';
             $ret .= '</td></tr>';
@@ -725,8 +798,11 @@ sub UWZAsHtml($;$) {
         $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
         $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
         # language by AttrVal
-        $ret .='<b>No Warnings</b>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "UK" );
-        $ret .='<b>Keine Warnungen</b>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "DE" );
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            $ret .='<b>Keine Warnungen</b>';
+        } else {
+            $ret .='<b>No Warnings</b>';
+        }
         # end language by AttrVal
         $ret .= '</td></tr>';
         $ret .= '</table>';
@@ -740,22 +816,33 @@ sub UWZAsHtml($;$) {
 #####################################
 sub UWZAsHtmlLite($;$) {
 
-    my ($hash,$items) = @_;
+    my ($name,$items) = @_;
     my $ret = '';
+    my $hash = $defs{$name}; 
+    my $attr;
+    if (AttrVal($name, "htmlattr", "none") ne "none") {
+        $attr = AttrVal($name, "htmlattr", "");
+    } else {
+        $attr = 'width="100%"';
+    }
     
-    if (ReadingsVal($hash, "WarnCount", "") != 0 ) {
+    if (ReadingsVal($name, "WarnCount", "") != 0 ) {
 
         $ret .= '<table><tr><td>';
-        $ret .= '<table class="block wide"><tr><th></th><th></th></tr>';
+        $ret .= '<table class="block" '.$attr.'><tr><th></th><th></th></tr>';
   
-        for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
+        for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
         
-            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
-            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($hash, "Warn_".$i."_ShortText", "").'</b><br><br>';
-            $ret .= '<table width="100%"><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_Start", "")).'</td>';
+            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
+            $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
             # language by AttrVal
-            $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "UK" );
-            $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($hash, "Warn_".$i."_End", "")).'</td>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "DE" );
+            
+            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+            } else {
+                $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+            }
             # end language by AttrVal
             $ret .= '</tr></table>';
             $ret .= '</td></tr>';
@@ -772,8 +859,11 @@ sub UWZAsHtmlLite($;$) {
         $ret .= '<table class="block wide" width="600px"><tr><th></th><th></th></tr>';
         $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
         # language by AttrVal
-        $ret .='<b>No Warnings</b>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "UK" );
-        $ret .='<b>Keine Warnungen</b>' if ( AttrVal( $hash, 'CountryCode', '' ) eq "DE" );
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            $ret .='<b>Keine Warnungen</b>';
+        } else {
+            $ret .='<b>No Warnings</b>';
+        }
         # end language by AttrVal
         $ret .= '</td></tr>';
         $ret .= '</table>';
@@ -787,15 +877,15 @@ sub UWZAsHtmlLite($;$) {
 #####################################
 sub UWZAsHtmlFP($;$) {
 
-    my ($hash,$items) = @_;
-    my $tablewidth = ReadingsVal($hash, "WarnCount", "") * 80;
+    my ($name,$items) = @_;
+    my $tablewidth = ReadingsVal($name, "WarnCount", "") * 80;
     my $ret = '';
     
     $ret .= '<table class="uwz-fp" style="width:'.$tablewidth.'px"><tr><th></th><th></th></tr>';
     $ret .= "<tr>";
     
-    for ( my $i=0; $i<ReadingsVal($hash, "WarnCount", ""); $i++){
-        $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($hash, "Warn_".$i."_IconURL", "").'"></td>';
+    for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
+        $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
     }
     
     $ret .= "</tr>";
@@ -808,8 +898,10 @@ sub UWZAsHtmlFP($;$) {
 #####################################
 sub UWZAsHtmlKarteLand($$) {
 
-    my ($hash,$land) = @_;
-    my $url = UWZ_Map2Image($hash,$land);
+    my ($name,$land) = @_;
+    my $url = UWZ_Map2Image($name,$land);
+    my $hash = $defs{$name};
+
     my $ret = '<table><tr><td>';
     
     $ret .= '<table class="block wide">';
@@ -820,8 +912,11 @@ sub UWZAsHtmlKarteLand($$) {
         
     } else {
         # language by AttrVal
-        $ret .='unknown map setting' if ( AttrVal( $hash, 'CountryCode', '' ) eq "UK" );
-        $ret .= 'unbekannte Landbezeichnung' if ( AttrVal( $hash, 'CountryCode', '' ) eq "DE" );
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            $ret .= 'unbekannte Landbezeichnung';
+        } else {
+            $ret .='unknown map setting';
+        }       
         # end language by AttrVal
     }
     
@@ -830,6 +925,152 @@ sub UWZAsHtmlKarteLand($$) {
     
     return $ret;
 }
+
+
+#####################################
+sub UWZ_GetSeverityColor($$) {
+    my ($name,$warnname) = @_;
+    my @alert = split(/_/,$warnname);
+    if ( @alert[1] eq "forewarn" ) {
+        return "gelb";
+    } else {
+        return @alert[2];
+    }
+}
+
+
+#####################################
+sub UWZ_GetUWZLevel($$) {
+    my ($name,$severitycolor) = @_;
+    my %UWZSeverity = ( "green" => "0",
+                        "darkgreen" => "1",
+                        "gelb" => "2",
+                        "orange" => "3",
+                        "red" => "4",
+                        "violet" => "5");
+    return $UWZSeverity{$severitycolor};
+}
+
+
+#####################################
+##
+##      UWZ Helper Functions
+##
+#####################################
+sub UWZWarn($$) {
+    my ($name,$event) = @_;
+    my $hash          = $defs{$name}; 
+    my $wNb           = ReadingsVal( $name, "WarnCount", 0 ) - 1;
+
+    if( ReadingsVal( $name, "WarnCount", 0 ) > ReadingsVal( $name, "lastWarnCount", 0 ) && ($event) > 0 ) {
+        return 1;
+    }
+
+    readingsSingleUpdate ( $hash, "lastWarnCount", $wNb, 0 );
+    return 0;
+}
+
+
+#####################################
+sub UWZSearchLatLon($) {
+    my ($loc)    = @_;
+    my $url      = "http://alertspro.geoservice.meteogroup.de/weatherpro/SearchFeed.php?search=".$loc;
+
+    my $agent    = LWP::UserAgent->new( env_proxy => 1, keep_alive => 1, protocols_allowed => ['http'], timeout => 10 );
+    my $request  = HTTP::Request->new( GET => $url );
+    my $response = $agent->request($request);
+    my $err_log  = "Can't get $url -- " . $response->status_line unless( $response->is_success );
+
+    if ( $err_log ne "" ) {
+        print "Error|Error " . $response->status_line;
+    }
+    use XML::Simple qw(:strict);
+    use Data::Dumper;
+
+    my $search = XMLin($response->content, KeyAttr => { poi => 'name' }, ForceArray => [ 'poi' ]);
+
+    my $ret = '<html><table><tr><td>';
+
+    $ret .= '<table class="block wide">';
+
+            $ret .= '<tr class="even">';
+            $ret .= "<td><b>city</b></td>";
+            $ret .= "<td><b>country</b></td>";
+            $ret .= "<td><b>latitude</b></td>";
+            $ret .= "<td><b>longitude</b></td>";
+            $ret .= '</tr>';
+
+
+    foreach my $locres ($search->{pois}->{poi})
+        {
+            my $linecount=1;
+            while ( my ($key, $value) = each(%$locres) ) {
+                if ( $linecount % 2 == 0 ) {
+                    $ret .= '<tr class="even">';
+                } else {
+                    $ret .= '<tr class="odd">';
+                }
+                $ret .= "<td>".encode('utf-8',$key)."</td>";
+                $ret .= "<td>$value->{'country-name'}</td>";
+                $ret .= "<td>$value->{'latitude'}</td>";
+                $ret .= "<td>$value->{'longitude'}</td>";
+                $ret .= '</tr>';
+                $linecount++;
+            }
+        }
+    $ret .= '</table></td></tr>';
+    $ret .= '</table></html>';
+
+    return $ret;#Dumper($search->{pois}->{poi});    
+
+}
+
+
+#####################################
+sub UWZSearchAreaID($$) {
+    my ($lat,$lon) = @_;
+    my $url = "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=lookupCoord&lat=".$lat."&lon=".$lon;
+    
+    my $agent    = LWP::UserAgent->new( env_proxy => 1, keep_alive => 1, protocols_allowed => ['http'], timeout => 10 );
+    my $request   = HTTP::Request->new( GET => $url );
+    my $response = $agent->request($request);
+    my $err_log = "Can't get $url -- " . $response->status_line unless( $response->is_success );
+
+    if ( $err_log ne "" ) {
+        print "Error|Error " . $response->status_line;
+    }
+    use JSON;
+    my @perl_scalar = @{JSON->new->utf8->decode($response->content)};
+
+    my $CC     = substr $perl_scalar[0]->{'AREA_ID'}, 3, 2;
+    my $AreaID = substr $perl_scalar[0]->{'AREA_ID'}, 5, 5;   
+
+    my $ret = '<html>Please use the following statement to define Unwetterzentrale for your location:<br /><br />';
+    $ret   .= '<table width=100%><tr><td>';
+    $ret   .= '<table class="block wide">';
+    $ret   .= '<tr class="even">';
+    $ret   .= "<td height=100><center><b>define Unwetterzentrale UWZ $CC $AreaID 3600</b></center></td>";
+    $ret   .= '</tr>';
+    $ret   .= '</table>';
+    $ret   .= '</td></tr></table>';
+
+    $ret   .= '<br />';
+    $ret   .= 'You can also use weblinks to add weathermaps. For a list of possible Weblinks see Commandref. For example to add the Europe Map use:<br />';
+
+    $ret   .= '<table width=100%><tr><td>';
+    $ret   .= '<table class="block wide">';
+    $ret   .= '<tr class="even">';
+    $ret   .= "<td height=100><center>define UWZ_Map_Europe weblink htmlCode { UWZAsHtmlKarteLand('Unwetterzentrale','europa') }</center></td>";
+    $ret   .= '</tr>';
+    $ret   .= '</table>';
+    $ret   .= '</td></tr></table>';
+
+    $ret   .= '</html>';
+ 
+    return $ret;
+}
+
+
 
 ##################################### 
 1;
@@ -1047,24 +1288,26 @@ sub UWZAsHtmlKarteLand($$) {
       <ul>
         <li>The second parameter should be one of:
         <ul>
+          <li>europa</li>
+          <br/>
           <li>deutschland</li>
           <li>deutschland-small</li>
-          <li>bayern</li>
-          <li>bremen</li>
-          <li>baden-wuerttemberg</li>
-          <li>brandenburg</li>
-          <li>berlin</li>
-          <li>hessen</li>
           <li>niedersachsen</li>
-          <li>rheinland-pfalz</li>
-          <li>saarland</li>
-          <li>sachsen</li>
-          <li>sachsen-anhalt</li>
-          <li>thueringen</li>
-          <li>nordrhein-westfalen</li>
-          <li>mecklenburg-vorpommern</li>
+          <li>bremen</li>
+          <li>bayern</li>
           <li>schleswig-holstein</li>
           <li>hamburg</li>
+          <li>mecklenburg-vorpommern</li>
+          <li>sachsen</li>
+          <li>sachsen-anhalt</li>
+          <li>nordrhein-westfalen</li>
+          <li>thueringen</li>
+          <li>rheinland-pfalz</li>
+          <li>saarland</li>
+          <li>baden-wuerttemberg</li>
+          <li>hessen</li>
+          <li>brandenburg</li>
+          <li>berlin</li>
           <br/>
           <li>oesterreich</li>
           <li>burgenland</li>
@@ -1076,6 +1319,28 @@ sub UWZAsHtmlKarteLand($$) {
           <li>tirol</li>
           <li>vorarlberg</li>
           <li>wien</li>
+          <br/>
+          <li>schweiz</li>
+          <br/>
+          <li>liechtenstein</li>
+          <br/>
+          <li>unitedkingdom</li>
+          <li>eastofengland</li>
+          <li>eastmidlands</li>
+          <li>london</li>
+          <li>northeastengland</li>
+          <li>northernireland</li>
+          <li>northwestengland</li>
+          <li>scotland</li>
+          <li>southeastengland</li>
+          <li>southwestengland</li>
+          <li>wales</li>
+          <li>westmidlands</li>
+          <li>yorkshireandthehumber</li>
+          <br/>
+          <li>isobaren1</li>
+          <li>isobaren2</li>
+          <li>isobaren3</li>
         </ul>          
         </li>
       </ul>
@@ -1283,24 +1548,26 @@ sub UWZAsHtmlKarteLand($$) {
       <ul>        
         <li>The second parameter should be one of:
         <ul>      
+          <li>europa</li>
+          <br/>
           <li>deutschland</li>
           <li>deutschland-small</li>
-          <li>bayern</li>
-          <li>bremen</li>
-          <li>baden-wuerttemberg</li>
-          <li>brandenburg</li>
-          <li>berlin</li>
-          <li>hessen</li>
           <li>niedersachsen</li>
-          <li>rheinland-pfalz</li>
-          <li>saarland</li>
-          <li>sachsen</li>
-          <li>sachsen-anhalt</li>
-          <li>thueringen</li>
-          <li>nordrhein-westfalen</li>
-          <li>mecklenburg-vorpommern</li>
+          <li>bremen</li>
+          <li>bayern</li>
           <li>schleswig-holstein</li>
           <li>hamburg</li>
+          <li>mecklenburg-vorpommern</li>
+          <li>sachsen</li>
+          <li>sachsen-anhalt</li>
+          <li>nordrhein-westfalen</li>
+          <li>thueringen</li>
+          <li>rheinland-pfalz</li>
+          <li>saarland</li>
+          <li>baden-wuerttemberg</li>
+          <li>hessen</li>
+          <li>brandenburg</li>
+          <li>berlin</li>
           <br/>
           <li>oesterreich</li>
           <li>burgenland</li>
@@ -1312,6 +1579,28 @@ sub UWZAsHtmlKarteLand($$) {
           <li>tirol</li>
           <li>vorarlberg</li>
           <li>wien</li>
+          <br/>
+          <li>schweiz</li>
+          <br/>
+          <li>liechtenstein</li>
+          <br/>
+          <li>unitedkingdom</li>
+          <li>eastofengland</li>
+          <li>eastmidlands</li>
+          <li>london</li>
+          <li>northeastengland</li>
+          <li>northernireland</li>
+          <li>northwestengland</li>
+          <li>scotland</li>
+          <li>southeastengland</li>
+          <li>southwestengland</li>
+          <li>wales</li>
+          <li>westmidlands</li>
+          <li>yorkshireandthehumber</li>
+          <br/>
+          <li>isobaren1</li>
+          <li>isobaren2</li>
+          <li>isobaren3</li>
         </ul>          
         </li>
       </ul>
