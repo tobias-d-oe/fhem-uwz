@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.2.2";
+my $version         = "1.3.2";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -212,7 +212,7 @@ sub UWZ_Define($$) {
     RemoveInternalTimer($hash);
    
     #Get first data after 12 seconds
-    InternalTimer( gettimeofday() + 12, "UWZ_Start", $hash, 0 );
+    InternalTimer( gettimeofday() + 12, "UWZ_Start", $hash, 0 ) if ($hash->{CountryCode} ne "search");
 
     return undef;
 }
@@ -234,7 +234,7 @@ sub UWZ_Set($@) {
     my ( $hash, @a ) = @_;
     my $name    = $hash->{NAME};
     my $reUINT = '^([\\+]?\\d+)$';
-    my $usage   = "Unknown argument $a[1], choose one of update:noArg ";
+    my $usage   = "Unknown argument $a[1], choose one of update:noArg " if ( $hash->{CountryCode} ne "search" );
 
     return $usage if ( @a < 2 );
 
@@ -287,6 +287,17 @@ sub UWZ_Get($@) {
         elsif ($a[1] =~ /^Bodenfrost/)       { UWZ_GetCurrent($hash,11); }
         elsif ($a[1] =~ /^Hagel/)            { UWZ_GetCurrentHail($hash); }
         else                                 { return $usage; }
+    }
+    
+    elsif ( $hash->{CountryCode} ~~ [ 'search' ] ) {
+        my $usage   = "Unknown argument $a[1], choose one of SearchLatLon SearchAreaID ";
+        
+        return $usage if ( @a < 3 );
+        
+        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon($a[2]); }
+        elsif ($a[1] =~ /^SearchAreaID/)            { UWZ_GetCurrentHail($hash); }
+        else                                        { return $usage; }
+        
     } else {
         my $usage   = "Unknown argument $a[1], choose one of storm:noArg snow:noArg rain:noArg extremfrost:noArg forest-fire:noArg thunderstorms:noArg glaze:noArg heat:noArg glazed-rain:noArg soil-frost:noArg hail:noArg ";
         
@@ -931,10 +942,10 @@ sub UWZAsHtmlKarteLand($$) {
 sub UWZ_GetSeverityColor($$) {
     my ($name,$warnname) = @_;
     my @alert = split(/_/,$warnname);
-    if ( @alert[1] eq "forewarn" ) {
+    if ( $alert[1] eq "forewarn" ) {
         return "gelb";
     } else {
-        return @alert[2];
+        return $alert[2];
     }
 }
 
@@ -957,21 +968,7 @@ sub UWZ_GetUWZLevel($$) {
 ##      UWZ Helper Functions
 ##
 #####################################
-sub UWZWarn($$) {
-    my ($name,$event) = @_;
-    my $hash          = $defs{$name}; 
-    my $wNb           = ReadingsVal( $name, "WarnCount", 0 ) - 1;
 
-    if( ReadingsVal( $name, "WarnCount", 0 ) > ReadingsVal( $name, "lastWarnCount", 0 ) && ($event) > 0 ) {
-        return 1;
-    }
-
-    readingsSingleUpdate ( $hash, "lastWarnCount", $wNb, 0 );
-    return 0;
-}
-
-
-#####################################
 sub UWZSearchLatLon($) {
     my ($loc)    = @_;
     my $url      = "http://alertspro.geoservice.meteogroup.de/weatherpro/SearchFeed.php?search=".$loc;
