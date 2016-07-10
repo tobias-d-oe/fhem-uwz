@@ -294,8 +294,8 @@ sub UWZ_Get($@) {
         
         return $usage if ( @a < 3 );
         
-        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon($a[2]); }
-        elsif ($a[1] =~ /^SearchAreaID/)            { UWZ_GetCurrentHail($hash); }
+        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon("uwz2", $a[2]); }
+        elsif ($a[1] =~ /^SearchAreaID/)            { my @splitparam = split(/,/,$a[2]); UWZSearchAreaID($splitparam[0],$splitparam[1]); }
         else                                        { return $usage; }
         
     } else {
@@ -969,8 +969,8 @@ sub UWZ_GetUWZLevel($$) {
 ##
 #####################################
 
-sub UWZSearchLatLon($) {
-    my ($loc)    = @_;
+sub UWZSearchLatLon($$) {
+    my ($name,$loc)    = @_;
     my $url      = "http://alertspro.geoservice.meteogroup.de/weatherpro/SearchFeed.php?search=".$loc;
 
     my $agent    = LWP::UserAgent->new( env_proxy => 1, keep_alive => 1, protocols_allowed => ['http'], timeout => 10 );
@@ -983,8 +983,9 @@ sub UWZSearchLatLon($) {
     }
     use XML::Simple qw(:strict);
     use Data::Dumper;
+    use Encode qw(decode encode);
 
-    my $search = XMLin($response->content, KeyAttr => { poi => 'name' }, ForceArray => [ 'poi' ]);
+    my $search = XMLin($response->content, KeyAttr => { city => 'id' }, ForceArray => [ 'city' ]);
 
     my $ret = '<html><table><tr><td>';
 
@@ -997,8 +998,7 @@ sub UWZSearchLatLon($) {
             $ret .= "<td><b>longitude</b></td>";
             $ret .= '</tr>';
 
-
-    foreach my $locres ($search->{pois}->{poi})
+    foreach my $locres ($search->{cities}->{city})
         {
             my $linecount=1;
             while ( my ($key, $value) = each(%$locres) ) {
@@ -1007,10 +1007,16 @@ sub UWZSearchLatLon($) {
                 } else {
                     $ret .= '<tr class="odd">';
                 }
-                $ret .= "<td>".encode('utf-8',$key)."</td>";
+                $ret .= "<td>".encode('utf-8',$value->{'name'})."</td>";
                 $ret .= "<td>$value->{'country-name'}</td>";
                 $ret .= "<td>$value->{'latitude'}</td>";
                 $ret .= "<td>$value->{'longitude'}</td>";
+
+                my @headerHost = grep /Host/, @FW_httpheader;
+                $headerHost[0] =~ s/Host: //g; 
+ 
+                my $aHref="<a href=\"http://".$headerHost[0]."/fhem?cmd=get+".$name."+SearchAreaID+".$value->{'latitude'}.",".$value->{'longitude'}."\">Get AreaID</a>";
+                $ret .= "<td>".$aHref."</td>";
                 $ret .= '</tr>';
                 $linecount++;
             }
@@ -1041,7 +1047,8 @@ sub UWZSearchAreaID($$) {
 
     my $CC     = substr $perl_scalar[0]->{'AREA_ID'}, 3, 2;
     my $AreaID = substr $perl_scalar[0]->{'AREA_ID'}, 5, 5;   
-
+    my $perl_scalar_size = @perl_scalar;
+    if ( $perl_scalar_size ge 1) {
     my $ret = '<html>Please use the following statement to define Unwetterzentrale for your location:<br /><br />';
     $ret   .= '<table width=100%><tr><td>';
     $ret   .= '<table class="block wide">';
@@ -1065,6 +1072,9 @@ sub UWZSearchAreaID($$) {
     $ret   .= '</html>';
  
     return $ret;
+    } else {
+    return "Sorry, nothing found";
+    }
 }
 
 
