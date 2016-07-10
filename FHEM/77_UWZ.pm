@@ -294,7 +294,7 @@ sub UWZ_Get($@) {
         
         return $usage if ( @a < 3 );
         
-        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon("uwz2", $a[2]); }
+        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon($name, $a[2]); }
         elsif ($a[1] =~ /^SearchAreaID/)            { my @splitparam = split(/,/,$a[2]); UWZSearchAreaID($splitparam[0],$splitparam[1]); }
         else                                        { return $usage; }
         
