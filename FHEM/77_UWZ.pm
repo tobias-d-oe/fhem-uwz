@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.3.2";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.3.5";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -133,6 +133,32 @@ sub UWZ_Map2Image($$) {
 
     ## CH
     $lmap->{'schweiz'}=$uwz_ch_url.'schweiz_index.png';
+    $lmap->{'aargau'}=$uwz_ch_url.'aargau_index.png';
+    $lmap->{'appenzell_ausserrhoden'}=$uwz_ch_url.'appenzell_ausserrhoden_index.png';
+    $lmap->{'appenzell_innerrhoden'}=$uwz_ch_url.'appenzell_innerrhoden_index.png';
+    $lmap->{'basel_landschaft'}=$uwz_ch_url.'basel_landschaft_index.png';
+    $lmap->{'basel_stadt'}=$uwz_ch_url.'basel_stadt_index.png';
+    $lmap->{'bern'}=$uwz_ch_url.'bern_index.png';
+    $lmap->{'fribourg'}=$uwz_ch_url.'fribourg_index.png';
+    $lmap->{'geneve'}=$uwz_ch_url.'geneve_index.png';
+    $lmap->{'glarus'}=$uwz_ch_url.'glarus_index.png';
+    $lmap->{'graubuenden'}=$uwz_ch_url.'graubuenden_index.png';
+    $lmap->{'jura'}=$uwz_ch_url.'jura_index.png';
+    $lmap->{'luzern'}=$uwz_ch_url.'luzern_index.png';
+    $lmap->{'neuchatel'}=$uwz_ch_url.'neuchatel_index.png';
+    $lmap->{'nidwalden'}=$uwz_ch_url.'nidwalden_index.png';
+    $lmap->{'obwalden'}=$uwz_ch_url.'obwalden_index.png';
+    $lmap->{'schaffhausen'}=$uwz_ch_url.'schaffhausen_index.png';
+    $lmap->{'schwyz'}=$uwz_ch_url.'schwyz_index.png';
+    $lmap->{'solothurn'}=$uwz_ch_url.'solothurn_index.png';
+    $lmap->{'stgallen'}=$uwz_ch_url.'stgallen_index.png';
+    $lmap->{'ticino'}=$uwz_ch_url.'ticino_index.png';
+    $lmap->{'thurgau'}=$uwz_ch_url.'thurgau_index.png';
+    $lmap->{'uri'}=$uwz_ch_url.'uri_index.png';
+    $lmap->{'waadt'}=$uwz_ch_url.'waadt_index.png';
+    $lmap->{'wallis'}=$uwz_ch_url.'wallis_index.png';
+    $lmap->{'zug'}=$uwz_ch_url.'zug_index.png';
+    $lmap->{'zuerich'}=$uwz_ch_url.'zuerich_index.png';
 
     ## LI
     $lmap->{'liechtenstein'}=$uwz_li_url.'liechtenstein_index.png';
@@ -190,7 +216,7 @@ sub UWZ_Define($$) {
     my @a    = split( "[ \t][ \t]*", $def );
    
     return "Error: Perl moduls ".$missingModul."are missing on this system" if( $missingModul );
-    return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if int(@a) > 6;
+    return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if (int(@a) != 5 and $a[2] ne "search");
 
     $hash->{STATE}           = "Initializing";
     $hash->{CountryCode}     = $a[2];
@@ -981,10 +1007,12 @@ sub UWZSearchLatLon($) {
     if ( $err_log ne "" ) {
         print "Error|Error " . $response->status_line;
     }
+    
     use XML::Simple qw(:strict);
     use Data::Dumper;
 
-    my $search = XMLin($response->content, KeyAttr => { poi => 'name' }, ForceArray => [ 'poi' ]);
+    
+    my $search = XMLin($response->content, KeyAttr => { city => 'id' }, ForceArray => [ 'city' ]);
 
     my $ret = '<html><table><tr><td>';
 
@@ -998,7 +1026,7 @@ sub UWZSearchLatLon($) {
             $ret .= '</tr>';
 
 
-    foreach my $locres ($search->{pois}->{poi})
+    foreach my $locres ($search->{cities}->{city})
         {
             my $linecount=1;
             while ( my ($key, $value) = each(%$locres) ) {
@@ -1007,7 +1035,7 @@ sub UWZSearchLatLon($) {
                 } else {
                     $ret .= '<tr class="odd">';
                 }
-                $ret .= "<td>".encode('utf-8',$key)."</td>";
+                $ret .= "<td>".encode('utf-8',$value->{name})."</td>";
                 $ret .= "<td>$value->{'country-name'}</td>";
                 $ret .= "<td>$value->{'latitude'}</td>";
                 $ret .= "<td>$value->{'longitude'}</td>";
@@ -1018,7 +1046,7 @@ sub UWZSearchLatLon($) {
     $ret .= '</table></td></tr>';
     $ret .= '</table></html>';
 
-    return $ret;#Dumper($search->{pois}->{poi});    
+    return $ret;            #Dumper($search->{pois}->{poi});    
 
 }
 
