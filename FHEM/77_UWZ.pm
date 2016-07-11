@@ -90,6 +90,18 @@ sub UWZ_Map2Image($$) {
     my $uwz_ch_url = "http://alarm.meteocentrale.ch/images/map/";
     my $uwz_en_url = "http://warnings.severe-weather-centre.co.uk/images/map/";
     my $uwz_li_url = "http://alarm.meteocentrale.li/images/map/";
+    my $uwz_be_url = "http://alarm.meteo-info.be/images/map/";
+    my $uwz_dk_url = "http://alarm.vejrcentral.dk/images/map/";
+    my $uwz_fi_url = "http://vaaratasot.saa-varoitukset.fi/images/map/";
+    my $uwz_fr_url = "http://alerte.vigilance-meteo.fr/images/map/";
+    my $uwz_lu_url = "http://alarm.meteozentral.lu/images/map/";
+    my $uwz_nl_url = "http://alarm.noodweercentrale.nl/images/map/";
+    my $uwz_no_url = "http://advarsler.vaer-sentral.no/images/map/";
+    my $uwz_pt_url = "http://avisos.centrometeo.pt/images/map/";
+    my $uwz_se_url = "http://varningar.vader-alarm.se/images/map/";
+    my $uwz_es_url = "http://avisos.alertas-tiempo.es/images/map/";
+
+
 
     my ( $hash, $smap ) = @_;
     my $lmap;
@@ -177,6 +189,37 @@ sub UWZ_Map2Image($$) {
     $lmap->{'wales'}=$uwz_en_url.'wales-index.png';
     $lmap->{'westmidlands'}=$uwz_en_url.'westmidlands-index.png';
     $lmap->{'yorkshireandthehumber'}=$uwz_en_url.'yorkshireandthehumber-index.png';
+
+    ## BE
+    $lmap->{'belgique'}=$uwz_be_url.'belgique_index.png';
+
+    ## DK
+    $lmap->{'denmark'}=$uwz_dk_url.'denmark_index.png';
+
+    ## FI
+    $lmap->{'finnland'}=$uwz_fi_url.'finnland_index.png';
+
+    ## FR
+    $lmap->{'france'}=$uwz_fr_url.'france_index.png';
+
+    ## LU
+    $lmap->{'letzebuerg'}=$uwz_lu_url.'letzebuerg_index.png';
+
+    ## NL
+    $lmap->{'nederland'}=$uwz_nl_url.'nederland_index.png';
+
+    ## NO
+    $lmap->{'norwegen'}=$uwz_no_url.'norwegen_index.png';
+
+    ## PT
+    $lmap->{'portugal'}=$uwz_pt_url.'portugal_index.png';
+
+    ## SE
+    $lmap->{'sverige'}=$uwz_se_url.'sverige_index.png';
+
+    ## ES
+    $lmap->{'espana'}=$uwz_es_url.'espana_index.png';
+
 
     ## Isobaren
     $lmap->{'isobaren1'}="http://www.unwetterzentrale.de/images/icons/UWZ_ISO_00.jpg";
