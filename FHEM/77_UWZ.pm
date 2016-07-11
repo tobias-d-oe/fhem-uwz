@@ -133,6 +133,32 @@ sub UWZ_Map2Image($$) {
 
     ## CH
     $lmap->{'schweiz'}=$uwz_ch_url.'schweiz_index.png';
+    $lmap->{'aargau'}=$uwz_ch_url.'aargau_index.png';
+    $lmap->{'appenzell_ausserrhoden'}=$uwz_ch_url.'appenzell_ausserrhoden_index.png';
+    $lmap->{'appenzell_innerrhoden'}=$uwz_ch_url.'appenzell_innerrhoden_index.png';
+    $lmap->{'basel_landschaft'}=$uwz_ch_url.'basel_landschaft_index.png';
+    $lmap->{'basel_stadt'}=$uwz_ch_url.'basel_stadt_index.png';
+    $lmap->{'bern'}=$uwz_ch_url.'bern_index.png';
+    $lmap->{'fribourg'}=$uwz_ch_url.'fribourg_index.png';
+    $lmap->{'geneve'}=$uwz_ch_url.'geneve_index.png';
+    $lmap->{'glarus'}=$uwz_ch_url.'glarus_index.png';
+    $lmap->{'graubuenden'}=$uwz_ch_url.'graubuenden_index.png';
+    $lmap->{'jura'}=$uwz_ch_url.'jura_index.png';
+    $lmap->{'luzern'}=$uwz_ch_url.'luzern_index.png';
+    $lmap->{'neuchatel'}=$uwz_ch_url.'neuchatel_index.png';
+    $lmap->{'nidwalden'}=$uwz_ch_url.'nidwalden_index.png';
+    $lmap->{'obwalden'}=$uwz_ch_url.'obwalden_index.png';
+    $lmap->{'schaffhausen'}=$uwz_ch_url.'schaffhausen_index.png';
+    $lmap->{'schwyz'}=$uwz_ch_url.'schwyz_index.png';
+    $lmap->{'solothurn'}=$uwz_ch_url.'solothurn_index.png';
+    $lmap->{'stgallen'}=$uwz_ch_url.'stgallen_index.png';
+    $lmap->{'ticino'}=$uwz_ch_url.'ticino_index.png';
+    $lmap->{'thurgau'}=$uwz_ch_url.'thurgau_index.png';
+    $lmap->{'uri'}=$uwz_ch_url.'uri_index.png';
+    $lmap->{'waadt'}=$uwz_ch_url.'waadt_index.png';
+    $lmap->{'wallis'}=$uwz_ch_url.'wallis_index.png';
+    $lmap->{'zug'}=$uwz_ch_url.'zug_index.png';
+    $lmap->{'zuerich'}=$uwz_ch_url.'zuerich_index.png';
 
     ## LI
     $lmap->{'liechtenstein'}=$uwz_li_url.'liechtenstein_index.png';
@@ -190,30 +216,37 @@ sub UWZ_Define($$) {
     my @a    = split( "[ \t][ \t]*", $def );
    
     return "Error: Perl moduls ".$missingModul."are missing on this system" if( $missingModul );
-    return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if int(@a) > 6;
+    return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if (int(@a) != 5 and  ((lc $a[2]) ne "search"));
 
-    $hash->{STATE}           = "Initializing";
-    $hash->{CountryCode}     = $a[2];
-    $hash->{PLZ}             = $a[3];
+    if ((lc $a[2]) ne "search") {
+
+        $hash->{STATE}           = "Initializing";
+        $hash->{CountryCode}     = $a[2];
+        $hash->{PLZ}             = $a[3];
+        
+        ## URL by CountryCode
+        my $URL_language="en";
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            $URL_language="de";
+        }
     
-    ## URL by CountryCode
-    my $URL_language="en";
-    if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
-        $URL_language="de";
-    }
-
-    $hash->{URL} =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=" . $URL_language . "&areaID=UWZ" . $a[2] . $a[3];
-
+        $hash->{URL} =  "http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=" . $URL_language . "&areaID=UWZ" . $a[2] . $a[3];
     
-    $hash->{fhem}{LOCAL}     = 0;
-    $hash->{INTERVAL}        = $a[4];
-    $hash->{VERSION}         = $version;
+        
+        $hash->{fhem}{LOCAL}     = 0;
+        $hash->{INTERVAL}        = $a[4];
+        $hash->{VERSION}         = $version;
+       
+        RemoveInternalTimer($hash);
+       
+        #Get first data after 12 seconds
+        InternalTimer( gettimeofday() + 12, "UWZ_Start", $hash, 0 ) if ((lc $hash->{CountryCode}) ne "search");
    
-    RemoveInternalTimer($hash);
-   
-    #Get first data after 12 seconds
-    InternalTimer( gettimeofday() + 12, "UWZ_Start", $hash, 0 ) if ($hash->{CountryCode} ne "search");
-
+    } else {
+        $hash->{STATE}           = "Search-Mode";
+        $hash->{CountryCode}     = uc $a[2];
+        $hash->{VERSION}         = $version;
+    } 
     return undef;
 }
 
@@ -234,7 +267,7 @@ sub UWZ_Set($@) {
     my ( $hash, @a ) = @_;
     my $name    = $hash->{NAME};
     my $reUINT = '^([\\+]?\\d+)$';
-    my $usage   = "Unknown argument $a[1], choose one of update:noArg " if ( $hash->{CountryCode} ne "search" );
+    my $usage   = "Unknown argument $a[1], choose one of update:noArg " if ( (lc $hash->{CountryCode}) ne "search" );
 
     return $usage if ( @a < 2 );
 
@@ -289,7 +322,7 @@ sub UWZ_Get($@) {
         else                                 { return $usage; }
     }
     
-    elsif ( $hash->{CountryCode} ~~ [ 'search' ] ) {
+    elsif ( (lc $hash->{CountryCode}) eq  'search' ) {
         my $usage   = "Unknown argument $a[1], choose one of SearchLatLon SearchAreaID ";
         
         return $usage if ( @a < 3 );
@@ -1024,7 +1057,7 @@ sub UWZSearchLatLon($$) {
     $ret .= '</table></td></tr>';
     $ret .= '</table></html>';
 
-    return $ret;#Dumper($search->{pois}->{poi});    
+    return $ret;
 
 }
 
@@ -1045,35 +1078,37 @@ sub UWZSearchAreaID($$) {
     use JSON;
     my @perl_scalar = @{JSON->new->utf8->decode($response->content)};
 
-    my $CC     = substr $perl_scalar[0]->{'AREA_ID'}, 3, 2;
-    my $AreaID = substr $perl_scalar[0]->{'AREA_ID'}, 5, 5;   
-    my $perl_scalar_size = @perl_scalar;
-    if ( $perl_scalar_size ge 1) {
-    my $ret = '<html>Please use the following statement to define Unwetterzentrale for your location:<br /><br />';
-    $ret   .= '<table width=100%><tr><td>';
-    $ret   .= '<table class="block wide">';
-    $ret   .= '<tr class="even">';
-    $ret   .= "<td height=100><center><b>define Unwetterzentrale UWZ $CC $AreaID 3600</b></center></td>";
-    $ret   .= '</tr>';
-    $ret   .= '</table>';
-    $ret   .= '</td></tr></table>';
 
-    $ret   .= '<br />';
-    $ret   .= 'You can also use weblinks to add weathermaps. For a list of possible Weblinks see Commandref. For example to add the Europe Map use:<br />';
+    my $AreaType = $perl_scalar[0]->{'AREA_TYPE'};
+    my $CC       = substr $perl_scalar[0]->{'AREA_ID'}, 3, 2;
+    my $AreaID   = substr $perl_scalar[0]->{'AREA_ID'}, 5, 5;   
 
-    $ret   .= '<table width=100%><tr><td>';
-    $ret   .= '<table class="block wide">';
-    $ret   .= '<tr class="even">';
-    $ret   .= "<td height=100><center>define UWZ_Map_Europe weblink htmlCode { UWZAsHtmlKarteLand('Unwetterzentrale','europa') }</center></td>";
-    $ret   .= '</tr>';
-    $ret   .= '</table>';
-    $ret   .= '</td></tr></table>';
-
-    $ret   .= '</html>';
- 
-    return $ret;
+    if ( $AreaType eq "UWZ" ) {
+        my $ret = '<html>Please use the following statement to define Unwetterzentrale for your location:<br /><br />';
+        $ret   .= '<table width=100%><tr><td>';
+        $ret   .= '<table class="block wide">';
+        $ret   .= '<tr class="even">';
+        $ret   .= "<td height=100><center><b>define Unwetterzentrale UWZ $CC $AreaID 3600</b></center></td>";
+        $ret   .= '</tr>';
+        $ret   .= '</table>';
+        $ret   .= '</td></tr></table>';
+    
+        $ret   .= '<br />';
+        $ret   .= 'You can also use weblinks to add weathermaps. For a list of possible Weblinks see Commandref. For example to add the Europe Map use:<br />';
+    
+        $ret   .= '<table width=100%><tr><td>';
+        $ret   .= '<table class="block wide">';
+        $ret   .= '<tr class="even">';
+        $ret   .= "<td height=100><center>define UWZ_Map_Europe weblink htmlCode { UWZAsHtmlKarteLand('Unwetterzentrale','europa') }</center></td>";
+        $ret   .= '</tr>';
+        $ret   .= '</table>';
+        $ret   .= '</td></tr></table>';
+    
+        $ret   .= '</html>';
+     
+        return $ret;
     } else {
-    return "Sorry, nothing found";
+        return "Sorry, nothing found or not implemented";
     }
 }
 
@@ -1104,15 +1139,12 @@ sub UWZSearchAreaID($$) {
    <b>Define</b>
    <ul>
       <br>
-      <code>define &lt;Name&gt; UWZ [CountryCode] [postalcode] [INTERVAL]</code>
+      <code>define &lt;Name&gt; UWZ [CountryCode] [AreaID] [INTERVAL]</code>
       <br><br><br>
       Example:
       <br>
       <code>
-        define Unwetterzentrale UWZ UK 03931 1800<br>
-        attr Unwetterzentrale CountryCode UK<br>
-        attr Unwetterzentrale PLZ 03931<br>
-        attr Unwetterzentrale URL http://feed.alertspro.meteogroup.com/AlertsPro/AlertsProPollService.php?method=getWarning&language=en&areaID=UWZUK03931<br>
+        define Unwetterzentrale UWZ UK 08357 1800<br>
         attr Unwetterzentrale download 1<br>
         attr Unwetterzentrale humanreadable 1<br>
         attr Unwetterzentrale maps eastofengland unitedkingdom<br><br>
@@ -1125,11 +1157,11 @@ sub UWZSearchAreaID($$) {
       <li><code>[CountryCode]</code>
          <br>
          Possible values: DE, AT, CH, UK, ...<br/>
-         (for other countries than germany or unitedkingdom see <a href="http://forum.fhem.de/index.php/topic,33549.msg260076.html#msg260076">fhem-forum</a>)
+         (for other countries than germany use SEARCH for CountryCode to start device in search mode)
       </li><br>
-      <li><code>[postalcode]</code>
+      <li><code>[AreaID]</code>
          <br>
-         The postalcode for the city to get warnings for. 
+         For Germany you can use the postalcode, other countries use SEARCH for CountryCode to start device in search mode. 
          <br>
       </li><br>
       <li><code>[INTERVAL]</code>
@@ -1137,6 +1169,32 @@ sub UWZSearchAreaID($$) {
          Defines the refresh interval. The interval is defined in seconds, so an interval of 3600 means that every hour a refresh will be triggered onetimes. 
          <br>
       </li><br>
+
+      <br><br><br>
+      Example Search-Mode:
+      <br>
+      <code>
+        define Unwetterzentrale UWZ SEARCH<br>
+      </code>
+      <br>
+      now get the latitude and longitude for your location (example shows london):
+      <br>
+      <code>
+        get Unwetterzentrale SearchLatLon London<br>
+      </code>
+      <br>
+      than take the latitude and longitude and search for the AreaID:
+      <br>
+      <code>
+        get Unwetterzentrale SearchAreaID 51.5071,-0.12607<br>
+      </code>
+      <br>
+      now redefine your device with the outputted AreaID.
+      <br>
+
+      <br>&nbsp;
+
+
    </ul>
    <br>
 
@@ -1144,47 +1202,47 @@ sub UWZSearchAreaID($$) {
    <b>Get</b>
    <ul>
       <br>
-      <li><code>get &lt;name&gt; Bodenfrost</code>
+      <li><code>get &lt;name&gt; soil-frost</code>
          <br>
          give info about current soil frost (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Extremfrost</code>
+      <li><code>get &lt;name&gt; extremfrost</code>
          <br>
          give info about current frost (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Gewitter</code>
+      <li><code>get &lt;name&gt; thunderstorm</code>
          <br>
          give info about current thunderstorm (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Glaette</code>
+      <li><code>get &lt;name&gt; glaze</code>
          <br>
          give info about current glaze (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Glatteisregen</code>
+      <li><code>get &lt;name&gt; glazed-rain</code>
          <br>
          give info about current freezing rain (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Hagel</code>
+      <li><code>get &lt;name&gt; hail</code>
          <br>
          give info about current hail (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Hitze</code>
+      <li><code>get &lt;name&gt; heat</code>
          <br>
          give info about current heat (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Regen</code>
+      <li><code>get &lt;name&gt; rain</code>
          <br>
          give info about current rain (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Schneefall</code>
+      <li><code>get &lt;name&gt; snow</code>
          <br>
          give info about current snow (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Sturm</code>
+      <li><code>get &lt;name&gt; storm</code>
          <br>
          give info about current storm (active|inactive).
       </li><br>
-      <li><code>get &lt;name&gt; Waldbrand</code>
+      <li><code>get &lt;name&gt; forest-fire</code>
          <br>
          give info about current forest fire (active|inactive).
       </li><br>
@@ -1192,6 +1250,24 @@ sub UWZSearchAreaID($$) {
    </ul>  
   
    <br>
+
+   <b>Get (Search-Mode)</b>
+   <ul>
+      <br>
+      <li><code>get &lt;name&gt; SearchLatLon &lt;cityname&gt;</code>
+         <br>
+         Get latitude und longitute to calculate AreaID.
+      </li><br>
+      <li><code>get &lt;name&gt; SearchAreaID &lt;latitude&gt;,&lt;longitude&gt;</code>
+         <br>
+         Get AreaID coresponnding to entered latitude and longitute.
+      </li><br>
+
+   </ul>  
+  
+   <br>
+
+
 
    <a name="UWZset"></a>
    <b>Set</b>
@@ -1208,11 +1284,6 @@ sub UWZSearchAreaID($$) {
    <b>Attributes</b>
    <ul>
       <br>
-      <li><code>CountryCode</code>
-         <br>
-         Set country code for text messages (None|UK). 
-         <br>
-      </li>
       <li><code>download</code>
          <br>
          Download maps during update (0|1). 
@@ -1230,7 +1301,7 @@ sub UWZSearchAreaID($$) {
       </li>
       <li><code>humanreadable</code>
          <br>
-         Add additional Readings Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date and Warn_?_End_Time containing the coresponding timetamp in a human readable manner. (0|1).
+         Add additional Readings Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date and Warn_?_End_Time containing the coresponding timetamp in a human readable manner. Additionally Warn_?_uwzLevel_Str and Warn_?_Type_Str will be added to device readings (0|1).
          <br>
       </li>
 
@@ -1255,6 +1326,7 @@ sub UWZSearchAreaID($$) {
       <li><b>Warn_</b><i>0</i><b>_Severity</b> - Severity of thunderstorm (0 no thunderstorm, 4, 7, 11, .. heavy thunderstorm)</li>
       <li><b>Warn_</b><i>0</i><b>_Hail</b> - warning contains hail</li>
       <li><b>Warn_</b><i>0</i><b>_Type</b> - kind of thunderstorm</li>
+      <li><b>Warn_</b><i>0</i><b>_Type_Str</b> - kind of thunderstorm (text)</li>
       <ul>
         <li><b>1</b> - unknown</li>
         <li><b>2</b> - storm</li>
@@ -1268,7 +1340,8 @@ sub UWZSearchAreaID($$) {
         <li><b>10</b> - freezing rain</li>
         <li><b>11</b> - soil frost</li>
       </ul>
-      <li><b>Warn_</b><i>0</i><b>_uwzLevel</b> - Severity of thunderstorm (like Severity)</li>
+      <li><b>Warn_</b><i>0</i><b>_uwzLevel</b> - Severity of thunderstorm (0-5)</li>
+      <li><b>Warn_</b><i>0</i><b>_uwzLevel_Str</b> - Severity of thunderstorm (text)</li>
       <li><b>Warn_</b><i>0</i><b>_levelName</b> - Level Warn Name</li>
       <li><b>Warn_</b><i>0</i><b>_ShortText</b> - short warn text</li>
       <li><b>Warn_</b><i>0</i><b>_LongText</b> - detailed warn text</li>
@@ -1328,6 +1401,32 @@ sub UWZSearchAreaID($$) {
           <li>wien</li>
           <br/>
           <li>schweiz</li>
+          <li>aargau</li>
+          <li>appenzell_ausserrhoden</li>
+          <li>appenzell_innerrhoden</li>
+          <li>basel_landschaft</li>
+          <li>basel_stadt</li>
+          <li>bern</li>
+          <li>fribourg</li>
+          <li>geneve</li>
+          <li>glarus</li>
+          <li>graubuenden</li>
+          <li>jura</li>
+          <li>luzern</li>
+          <li>neuchatel</li>
+          <li>nidwalden</li>
+          <li>obwalden</li>
+          <li>schaffhausen</li>
+          <li>schwyz</li>
+          <li>solothurn</li>
+          <li>stgallen</li>
+          <li>ticino</li>
+          <li>thurgau</li>
+          <li>uri</li>
+          <li>waadt</li>
+          <li>wallis</li>
+          <li>zug</li>
+          <li>zuerich</li>
           <br/>
           <li>liechtenstein</li>
           <br/>
@@ -1388,12 +1487,12 @@ sub UWZSearchAreaID($$) {
 
       <li><code>[L&auml;ndercode]</code>
          <br>
-         M&ouml;gliche Werte: DE, AT, CH,...<br/>
-         (f&uuml;r ander L&auml;nder als Deutschland werfen Sie einen Blick in das <a href="http://forum.fhem.de/index.php/topic,33549.msg260076.html#msg260076">fhem-forum</a>.
+         M&ouml;gliche Werte: DE, AT, CH, SEARCH, ...<br/>
+         (f&uuml;r ander L&auml;nder als Deutschland bitte den SEARCH Parameter nutzen um die AreaID zu ermitteln.)
       </li><br>
-      <li><code>[Postleitzahl]</code>
+      <li><code>[Postleitzahl/AreaID]</code>
          <br>
-         Die Postleitzahl des Ortes für den Unwetterinformationen abgefragt werden sollen. 
+         Die Postleitzahl/AreaID des Ortes für den Unwetterinformationen abgefragt werden sollen. 
          <br>
       </li><br>
       <li><code>[INTERVAL]</code>
@@ -1458,6 +1557,24 @@ sub UWZSearchAreaID($$) {
   
    <br>
 
+   <b>Get (Search-Mode)</b>
+   <ul>
+      <br>
+      <li><code>get &lt;name&gt; SearchLatLon &lt;gesuchte Stadt&gt;</code>
+         <br>
+         Gibt Latitude und Longitute aus zur Ermittlung der AreaID.
+      </li><br>
+      <li><code>get &lt;name&gt; SearchAreaID &lt;latitude&gt;,&lt;longitude&gt;</code>
+         <br>
+         Gibt die AreaID zur eingegebenen Latitude und Longitute aus.
+      </li><br>
+
+   </ul>  
+  
+   <br>
+
+
+
    <a name="UWZset"></a>
    <b>Set</b>
    <ul>
@@ -1491,7 +1608,7 @@ sub UWZSearchAreaID($$) {
       </li>
       <li><code>humanreadable</code>
          <br>
-     Anzeige weiterer Readings Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date und Warn_?_End_Time. Diese Readings enthalten aus dem Timestamp kalkulierte Datums/Zeit Angaben. (0|1) 
+     Anzeige weiterer Readings Warn_?_Start_Date, Warn_?_Start_Time, Warn_?_End_Date, Warn_?_End_Time. Diese Readings enthalten aus dem Timestamp kalkulierte Datums/Zeit Angaben. Weiterhin werden folgende Readings aktivier: Warn_?_Type_Str und Warn_?_uwzLevel_Str welche den Unwettertyp als auch das Unwetter-Warn-Level als Text ausgeben. (0|1) 
          <br>
       </li>
 
@@ -1515,6 +1632,7 @@ sub UWZSearchAreaID($$) {
       <li><b>Warn_</b><i>0</i><b>_Severity</b> - Schwere des Unwetters (0 kein Unwetter, 12 massives Unwetter)</li>
       <li><b>Warn_</b><i>0</i><b>_Hail</b> - Hagelwarnung (1|0)</li>
       <li><b>Warn_</b><i>0</i><b>_Type</b> - Art des Unwetters</li>
+      <li><b>Warn_</b><i>0</i><b>_Type_Str</b> - Art des Unwetters (text)</li>
       <ul>
         <li><b>1</b> - unbekannt</li>
         <li><b>2</b> - Sturm/Orkan</li>
@@ -1528,7 +1646,8 @@ sub UWZSearchAreaID($$) {
         <li><b>10</b> - Glatteisregen</li>
         <li><b>11</b> - Bodenfrost</li>
       </ul>
-      <li><b>Warn_</b><i>0</i><b>_uwzLevel</b> - Schwere des Unwetters (wie Severity)</li>
+      <li><b>Warn_</b><i>0</i><b>_uwzLevel</b> - Unwetterwarnstufe (0-5)</li>
+      <li><b>Warn_</b><i>0</i><b>_uwzLevel_Str</b> - Unwetterwarnstufe (text)</li>
       <li><b>Warn_</b><i>0</i><b>_levelName</b> - Level Warn Name</li>
       <li><b>Warn_</b><i>0</i><b>_ShortText</b> - Kurzbeschreibung der Warnung</li>
       <li><b>Warn_</b><i>0</i><b>_LongText</b> - Ausführliche Unwetterbeschreibung</li>
@@ -1588,6 +1707,32 @@ sub UWZSearchAreaID($$) {
           <li>wien</li>
           <br/>
           <li>schweiz</li>
+          <li>aargau</li>
+          <li>appenzell_ausserrhoden</li>
+          <li>appenzell_innerrhoden</li>
+          <li>basel_landschaft</li>
+          <li>basel_stadt</li>
+          <li>bern</li>
+          <li>fribourg</li>
+          <li>geneve</li>
+          <li>glarus</li>
+          <li>graubuenden</li>
+          <li>jura</li>
+          <li>luzern</li>
+          <li>neuchatel</li>
+          <li>nidwalden</li>
+          <li>obwalden</li>
+          <li>schaffhausen</li>
+          <li>schwyz</li>
+          <li>solothurn</li>
+          <li>stgallen</li>
+          <li>ticino</li>
+          <li>thurgau</li>
+          <li>uri</li>
+          <li>waadt</li>
+          <li>wallis</li>
+          <li>zug</li>
+          <li>zuerich</li>
           <br/>
           <li>liechtenstein</li>
           <br/>
