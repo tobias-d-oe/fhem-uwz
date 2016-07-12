@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.3.2";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.3.6";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -366,12 +366,12 @@ sub UWZ_Get($@) {
     }
     
     elsif ( (lc $hash->{CountryCode}) eq  'search' ) {
-        my $usage   = "Unknown argument $a[1], choose one of SearchLatLon SearchAreaID ";
+        my $usage   = "Unknown argument $a[1], choose one of SearchAreaID ";
         
         return $usage if ( @a < 3 );
         
-        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon($name, $a[2]); }
-        elsif ($a[1] =~ /^SearchAreaID/)            { my @splitparam = split(/,/,$a[2]); UWZSearchAreaID($splitparam[0],$splitparam[1]); }
+        if    ($a[1] =~ /^SearchAreaID/)            { UWZSearchLatLon($name, $a[2]); }
+        elsif ($a[1] =~ /^AreaID/)                  { my @splitparam = split(/,/,$a[2]); UWZSearchAreaID($splitparam[0],$splitparam[1]); }
         else                                        { return $usage; }
         
     } else {
@@ -1091,7 +1091,7 @@ sub UWZSearchLatLon($$) {
                 my @headerHost = grep /Host/, @FW_httpheader;
                 $headerHost[0] =~ s/Host: //g; 
  
-                my $aHref="<a href=\"http://".$headerHost[0]."/fhem?cmd=get+".$name."+SearchAreaID+".$value->{'latitude'}.",".$value->{'longitude'}."\">Get AreaID</a>";
+                my $aHref="<a href=\"http://".$headerHost[0]."/fhem?cmd=get+".$name."+AreaID+".$value->{'latitude'}.",".$value->{'longitude'}."\">Get AreaID</a>";
                 $ret .= "<td>".$aHref."</td>";
                 $ret .= '</tr>';
                 $linecount++;
@@ -1220,19 +1220,13 @@ sub UWZSearchAreaID($$) {
         define Unwetterzentrale UWZ SEARCH<br>
       </code>
       <br>
-      now get the latitude and longitude for your location (example shows london):
+      now get the AreaID for your location (example shows london):
       <br>
       <code>
-        get Unwetterzentrale SearchLatLon London<br>
+        get Unwetterzentrale SearchAreaID London<br>
       </code>
       <br>
-      than take the latitude and longitude and search for the AreaID:
-      <br>
-      <code>
-        get Unwetterzentrale SearchAreaID 51.5071,-0.12607<br>
-      </code>
-      <br>
-      now redefine your device with the outputted AreaID.
+      now redefine your device with the outputted CountryCode and AreaID.
       <br>
 
       <br>&nbsp;
@@ -1297,13 +1291,9 @@ sub UWZSearchAreaID($$) {
    <b>Get (Search-Mode)</b>
    <ul>
       <br>
-      <li><code>get &lt;name&gt; SearchLatLon &lt;cityname&gt;</code>
+      <li><code>get &lt;name&gt; SearchAreaID &lt;city&gt;</code>
          <br>
-         Get latitude und longitute to calculate AreaID.
-      </li><br>
-      <li><code>get &lt;name&gt; SearchAreaID &lt;latitude&gt;,&lt;longitude&gt;</code>
-         <br>
-         Get AreaID coresponnding to entered latitude and longitute.
+         Get AreaID coresponnding to entered location.
       </li><br>
 
    </ul>  
@@ -1473,6 +1463,26 @@ sub UWZSearchAreaID($$) {
           <br/>
           <li>liechtenstein</li>
           <br/>
+          <li>belgique</li>
+          <br/>
+          <li>denmark</li>
+          <br/>
+          <li>finnland</li>
+          <br/>
+          <li>france</li>
+          <br/>
+          <li>letzebuerg</li>
+          <br/>
+          <li>nederland</li>
+          <br/>
+          <li>norwegen</li>
+          <br/>
+          <li>portugal</li>
+          <br/>
+          <li>sverige</li>
+          <br/>
+          <li>espana</li>
+          <br/>
           <li>unitedkingdom</li>
           <li>eastofengland</li>
           <li>eastmidlands</li>
@@ -1603,13 +1613,9 @@ sub UWZSearchAreaID($$) {
    <b>Get (Search-Mode)</b>
    <ul>
       <br>
-      <li><code>get &lt;name&gt; SearchLatLon &lt;gesuchte Stadt&gt;</code>
+      <li><code>get &lt;name&gt; SearchAreaID &lt;gesuchte_stadt&gt;</code>
          <br>
-         Gibt Latitude und Longitute aus zur Ermittlung der AreaID.
-      </li><br>
-      <li><code>get &lt;name&gt; SearchAreaID &lt;latitude&gt;,&lt;longitude&gt;</code>
-         <br>
-         Gibt die AreaID zur eingegebenen Latitude und Longitute aus.
+         Gibt die AreaID zum eingegebenen Ort aus.
       </li><br>
 
    </ul>  
@@ -1778,6 +1784,26 @@ sub UWZSearchAreaID($$) {
           <li>zuerich</li>
           <br/>
           <li>liechtenstein</li>
+          <br/>
+          <li>belgique</li>
+          <br/>
+          <li>denmark</li>
+          <br/>
+          <li>finnland</li>
+          <br/>
+          <li>france</li>
+          <br/>
+          <li>letzebuerg</li>
+          <br/>
+          <li>nederland</li>
+          <br/>
+          <li>norwegen</li>
+          <br/>
+          <li>portugal</li>
+          <br/>
+          <li>sverige</li>
+          <br/>
+          <li>espana</li>
           <br/>
           <li>unitedkingdom</li>
           <li>eastofengland</li>
