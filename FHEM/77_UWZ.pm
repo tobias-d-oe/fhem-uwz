@@ -366,12 +366,12 @@ sub UWZ_Get($@) {
     }
     
     elsif ( (lc $hash->{CountryCode}) eq  'search' ) {
-        my $usage   = "Unknown argument $a[1], choose one of SearchLatLon SearchAreaID ";
+        my $usage   = "Unknown argument $a[1], choose one of SearchAreaID ";
         
         return $usage if ( @a < 3 );
         
-        if    ($a[1] =~ /^SearchLatLon/)            { UWZSearchLatLon($name, $a[2]); }
-        elsif ($a[1] =~ /^SearchAreaID/)            { my @splitparam = split(/,/,$a[2]); UWZSearchAreaID($splitparam[0],$splitparam[1]); }
+        if    ($a[1] =~ /^SearchAreaID/)            { UWZSearchLatLon($name, $a[2]); }
+        elsif ($a[1] =~ /^AreaID/)            { my @splitparam = split(/,/,$a[2]); UWZSearchAreaID($splitparam[0],$splitparam[1]); }
         else                                        { return $usage; }
         
     } else {
@@ -1093,7 +1093,7 @@ sub UWZSearchLatLon($$) {
                 my @headerHost = grep /Host/, @FW_httpheader;
                 $headerHost[0] =~ s/Host: //g; 
  
-                my $aHref="<a href=\"http://".$headerHost[0]."/fhem?cmd=get+".$name."+SearchAreaID+".$value->{'latitude'}.",".$value->{'longitude'}."\">Get AreaID</a>";
+                my $aHref="<a href=\"http://".$headerHost[0]."/fhem?cmd=get+".$name."+AreaID+".$value->{'latitude'}.",".$value->{'longitude'}."\">Get AreaID</a>";
                 $ret .= "<td>".$aHref."</td>";
                 $ret .= '</tr>';
                 $linecount++;
