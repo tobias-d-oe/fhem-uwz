@@ -83,6 +83,38 @@ sub UWZ_Log($$$) {
 }
 
 ########################################
+sub UWZ_Map2Movie($$) {
+    my $uwz_movie_url = "http://www.meteocentrale.ch/uploads/media/";
+    my ( $hash, $smap ) = @_;
+    my $lmap;
+
+    $smap=lc($smap);
+
+    ## Euro
+    $lmap->{'niederschlag-wolken'}=$uwz_movie_url.'UWZ_EUROPE_COMPLETE_niwofi.mp4';
+    $lmap->{'stroemung'}=$uwz_movie_url.'UWZ_EUROPE_COMPLETE_stfi.mp4';
+    $lmap->{'temperatur'}=$uwz_movie_url.'UWZ_EUROPE_COMPLETE_theta_E.mp4';
+
+    ## DE
+    $lmap->{'niederschlag-wolken-de'}=$uwz_movie_url.'UWZ_EUROPE_GERMANY_COMPLETE_niwofi.mp4';
+    $lmap->{'stroemung-de'}=$uwz_movie_url.'UWZ_EUROPE_GERMANY_COMPLETE_stfi.mp4';
+
+    ## CH
+    $lmap->{'niederschlag-wolken-ch'}=$uwz_movie_url.'UWZ_EUROPE_SWITZERLAND_COMPLETE_niwofi.mp4';
+    $lmap->{'stroemung-ch'}=$uwz_movie_url.'UWZ_EUROPE_SWITZERLAND_COMPLETE_stfi.mp4';
+
+    ## AT
+    $lmap->{'niederschlag-wolken-at'}=$uwz_movie_url.'UWZ_EUROPE_AUSTRIA_COMPLETE_niwofi.mp4';
+    $lmap->{'stroemung-at'}=$uwz_movie_url.'UWZ_EUROPE_AUSTRIA_COMPLETE_stfi.mp4';
+
+    ## UK
+    $lmap->{'clouds-precipitation-uk'}=$uwz_movie_url.'UWZ_EUROPE_GREATBRITAIN_COMPLETE_niwofi.mp4';
+    $lmap->{'currents-uk'}=$uwz_movie_url.'UWZ_EUROPE_GREATBRITAIN_COMPLETE_stfi.mp4';
+
+    return $lmap->{$smap};
+}
+
+########################################
 sub UWZ_Map2Image($$) {
 
     my $uwz_de_url = "http://www.unwetterzentrale.de/images/map/";
@@ -100,7 +132,6 @@ sub UWZ_Map2Image($$) {
     my $uwz_pt_url = "http://avisos.centrometeo.pt/images/map/";
     my $uwz_se_url = "http://varningar.vader-alarm.se/images/map/";
     my $uwz_es_url = "http://avisos.alertas-tiempo.es/images/map/";
-
 
 
     my ( $hash, $smap ) = @_;
@@ -983,6 +1014,42 @@ sub UWZAsHtmlFP($;$) {
 
 
 #####################################
+sub UWZAsHtmlMovie($$) {
+
+    my ($name,$land) = @_;
+    my $url = UWZ_Map2Movie($name,$land);
+    my $hash = $defs{$name};
+
+    my $ret = '<table><tr><td>';
+
+    $ret .= '<table class="block wide">';
+    $ret .= '<tr class="even"><td>';
+
+    if(defined($url)) {
+        $ret .= '<video controls="controls">';
+        $ret .= '<source src="'.$url.'" type="video/mp4">';
+        $ret .= '</video>';
+
+    } else {
+        # language by AttrVal
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            $ret .= 'unbekannte Landbezeichnung';
+        } else {
+            $ret .='unknown movie setting';
+        }
+        # end language by AttrVal
+    }
+
+    $ret .= '</td></tr></table></td></tr>';
+    $ret .= '</table>';
+
+    return $ret;
+}
+
+
+
+
+#####################################
 sub UWZAsHtmlKarteLand($$) {
 
     my ($name,$land) = @_;
@@ -1194,6 +1261,7 @@ sub UWZSearchAreaID($$) {
         define UnwetterDetails weblink htmlCode {UWZAsHtml("Unwetterzentrale")}<br>
         define UnwetterMapE_UK weblink htmlCode {UWZAsHtmlKarteLand("Unwetterzentrale","eastofengland")}<br>
         define UnwetterLite weblink htmlCode {UWZAsHtmlLite("Unwetterzentrale")}
+        define UnwetterMovie weblink htmlCode {UWZAsHtmlMovie("Unwetterzentrale","clouds-precipitation-uk")}
       </code>
       <br>&nbsp;
 
@@ -1387,7 +1455,7 @@ sub UWZSearchAreaID($$) {
    <ul>
       <br>
 
-      With the additional implemented functions <code>UWZAsHtml, UWZAsHtmlLite, UWZAsHtmlFP and UWZAsHtmlKarteLand</code> HTML-Code will be created to display warnings, using weblinks.
+      With the additional implemented functions <code>UWZAsHtml, UWZAsHtmlLite, UWZAsHtmlFP, UWZAsHtmlKarteLand and UWZAsHtmlMovie</code> HTML-Code will be created to display warnings and weathermovies, using weblinks.
       <br><br><br>
       Example:
       <br>
@@ -1503,6 +1571,30 @@ sub UWZSearchAreaID($$) {
         </ul>          
         </li>
       </ul>
+      <li><code>define UnwetterKarteMovie weblink htmlCode {UWZAsHtmlMovie("Unwetterzentrale","currents")}</code></li>
+      <ul>
+        <li>The second parameter should be one of:
+        <ul>
+          <li>niederschlag-wolken</li>
+          <li>stroemung</li>
+          <li>temperatur</li>
+          <br/>
+          <li>niederschlag-wolken-de</li>
+          <li>stroemung-de</li>
+          <br/>
+          <li>niederschlag-wolken-ch</li>
+          <li>stroemung-ch</li>
+          <br/>
+          <li>niederschlag-wolken-at</li>
+          <li>stroemung-at</li>
+          <br/>
+          <li>niederschlag-wolken-uk</li>
+          <li>stroemung-uk</li>
+          <br/>
+        </ul>          
+        </li>
+      </ul>
+
       <br/><br/>
    </ul>
    <br>
@@ -1709,7 +1801,7 @@ sub UWZSearchAreaID($$) {
    <ul>
       <br>
 
-      &Uuml;ber die Funktionen <code>UWZAsHtml, UWZAsHtmlLite, UWZAsHtmlFP und UWZAsHtmlKarteLand</code> wird HTML-Code zur Warnanzeige über weblinks erzeugt.
+      &Uuml;ber die Funktionen <code>UWZAsHtml, UWZAsHtmlLite, UWZAsHtmlFP, UWZAsHtmlKarteLand, UWZAsHtmlMovie</code> wird HTML-Code zur Warnanzeige und Wetterfilme über weblinks erzeugt.
       <br><br><br>
       Beispiele:
       <br>
@@ -1721,7 +1813,7 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><code>define UnwetterKarteLand weblink htmlCode {UWZAsHtmlKarteLand("Unwetterzentrale","Bayern")}</code></li>
       <ul>        
-        <li>The second parameter should be one of:
+        <li>Der zweite Parameter kann einer der folgenden sein:
         <ul>      
           <li>europa</li>
           <br/>
@@ -1822,6 +1914,29 @@ sub UWZSearchAreaID($$) {
           <li>isobaren1</li>
           <li>isobaren2</li>
           <li>isobaren3</li>
+        </ul>          
+        </li>
+      </ul>
+      <li><code>define UnwetterKarteMovie weblink htmlCode {UWZAsHtmlMovie("Unwetterzentrale","niederschlag-wolken-de")}</code></li>
+      <ul>
+        <li>Der zweite Parameter kann einer der folgenden sein:
+        <ul>
+          <li>niederschlag-wolken</li>
+          <li>stroemung</li>
+          <li>temperatur</li>
+          <br/>
+          <li>niederschlag-wolken-de</li>
+          <li>stroemung-de</li>
+          <br/>
+          <li>niederschlag-wolken-ch</li>
+          <li>stroemung-ch</li>
+          <br/>
+          <li>niederschlag-wolken-at</li>
+          <li>stroemung-at</li>
+          <br/>
+          <li>clouds-precipitation-uk</li>
+          <li>currents-uk</li>
+          <br/>
         </ul>          
         </li>
       </ul>
