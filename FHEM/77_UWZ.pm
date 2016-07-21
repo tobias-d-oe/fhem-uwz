@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.3.7";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.4.1";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -1033,7 +1033,7 @@ sub UWZAsHtmlMovie($$) {
     } else {
         # language by AttrVal
         if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
-            $ret .= 'unbekannte Landbezeichnung';
+            $ret .= 'unbekannte Filmbezeichnung';
         } else {
             $ret .='unknown movie setting';
         }
