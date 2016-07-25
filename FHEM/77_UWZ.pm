@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.4.0";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.4.1";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -290,7 +290,7 @@ sub UWZ_Define($$) {
     my @a    = split( "[ \t][ \t]*", $def );
    
     return "Error: Perl moduls ".$missingModul."are missing on this system" if( $missingModul );
-    return "Wrong syntax: use define <name> UWZ [CountryCode] [PLZ] [Interval] "  if (int(@a) != 5 and  ((lc $a[2]) ne "search"));
+    return "Wrong syntax: use define <name> UWZ <CountryCode> <PLZ> <Interval> "  if (int(@a) != 5 and  ((lc $a[2]) ne "search"));
 
     if ((lc $a[2]) ne "search") {
 
@@ -1033,7 +1033,7 @@ sub UWZAsHtmlMovie($$) {
     } else {
         # language by AttrVal
         if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
-            $ret .= 'unbekannte Landbezeichnung';
+            $ret .= 'unbekannte Filmbezeichnung';
         } else {
             $ret .='unknown movie setting';
         }
