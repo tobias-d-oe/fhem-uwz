@@ -1,3 +1,7 @@
+-2016-07-23
+  - added attribute lang to overwrite warn message language. Can be set to "en/it/es/..."
+  - Version bump to 1.4.2
+
 -2016-06-20
   - Bugfix commandref
   - added support for UK. (thanks to fruit)
