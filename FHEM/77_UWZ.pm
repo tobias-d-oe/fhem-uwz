@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.4.2";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.4.3";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -274,6 +274,7 @@ sub UWZ_Initialize($) {
                         "humanreadable:0,1 ".
                         "htmlattr ".
                         "lang ".
+                        "sort_readings_by:severity,start ".
                         $readingFnAttributes;
    
     foreach my $d(sort keys %{$modules{UWZ}{defptr}}) {
@@ -561,6 +562,7 @@ sub UWZ_Done($) {
    
     # all term are separated by "|" , the first is the name of the instance
     my ( $name, %values ) = split( "\\|", $string );
+    UWZ_Log $name, 1, Dumper(%values);
     my $hash = $defs{$name};
     return unless ( defined($hash->{NAME}) );
    
@@ -568,7 +570,7 @@ sub UWZ_Done($) {
     delete( $hash->{helper}{RUNNING_PID} );  
 
     UWZ_Log $hash, 4, "Delete old Readings"; 
-    CommandDeleteReading(undef, "$hash->{NAME} Warn_?_.*");
+    #CommandDeleteReading(undef, "$hash->{NAME} Warn_?_.*");
 
 
     # UnWetterdaten speichern
@@ -587,6 +589,11 @@ sub UWZ_Done($) {
       
         if (keys %values > 0) {
             my $newState;
+            for my $Counter ($values{WarnCount} .. 9) {
+                CommandDeleteReading(undef, "$hash->{NAME} Warn_${Counter}_.*");
+            }
+
+
             if (defined $values{WarnCount}) {
                 # Message by CountryCode
                 
@@ -697,6 +704,15 @@ sub UWZ_Run($) {
 
     my $uwz_warncount = scalar(@{ $uwz_warnings->{'results'} });
     UWZ_Log $hash, 4, "There are ".$uwz_warncount." warnings active";
+    my $sortby = AttrVal( $name, 'sort_readings_by',"" );
+    my @sorted;
+    if ( $sortby ne "severity" ) {
+        UWZ_Log $hash, 4, "Sorting by dtgStart";
+        @sorted =  sort { $a->{dtgStart} <=> $b->{dtgStart} } @{ $uwz_warnings->{'results'} };
+    } else {
+        UWZ_Log $hash, 4, "Sorting by severity";
+        @sorted =  sort { $a->{severity} <=> $b->{severity} } @{ $uwz_warnings->{'results'} };
+    }
 
     my $message;
     my $i=0;
@@ -753,7 +769,19 @@ sub UWZ_Run($) {
                             "11" => "rot",
                             "12" => "violett" );
 
-    foreach my $single_warning (@{ $uwz_warnings->{'results'} }) {
+    #foreach my $single_warning (@{ $uwz_warnings->{'results'} }) {
+    foreach my $single_warning (@sorted) {
+
+        UWZ_Log $hash, 1, "Warn_".$i."_EventID: ".$single_warning->{'payload'}{'id'};
+        $message .= "Warn_".$i."_EventID|".$single_warning->{'payload'}{'id'}."|";
+
+
+        my $chopcreation = substr($single_warning->{'payload'}{'creation'},0,10);
+        $chopcreation = $chopcreation;
+
+        UWZ_Log $hash, 1, "Warn_".$i."_Creation: ".$chopcreation; 
+        $message .= "Warn_".$i."_Creation|".$chopcreation."|"; 
+
 
         UWZ_Log $hash, 4, "Warn_".$i."_Type: ".$single_warning->{'type'};
         $message .= "Warn_".$i."_Type|".$single_warning->{'type'}."|";
@@ -784,6 +812,14 @@ sub UWZ_Run($) {
             UWZ_Log $hash, 4, "Warn_".$i."_End_Time: ".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}));
             $message .= "Warn_".$i."_End_Time|".strftime("%H:%M", localtime($single_warning->{'dtgEnd'}))."|";
 
+
+            UWZ_Log $hash, 4, "Warn_".$i."_Creation_Date: ".strftime("%d.%m.%Y", localtime($chopcreation));
+            $message .= "Warn_".$i."_Creation_Date|".strftime("%d.%m.%Y", localtime($chopcreation))."|";
+
+            UWZ_Log $hash, 4, "Warn_".$i."_Creation_Time: ".strftime("%H:%M", localtime($chopcreation));
+            $message .= "Warn_".$i."_Creation_Time|".strftime("%H:%M", localtime($chopcreation))."|";
+
+   
 
             # Begin Language by AttrVal
             if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
