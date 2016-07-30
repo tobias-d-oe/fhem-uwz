@@ -1,3 +1,6 @@
+-2016-07-31
+  - feature: added attribute htmlsequence (ascending|descending)
+
 -2016-07-29
   - feature: added attribute sort_readings_by (start|severity)
   - bugfix: change Deletereadings methode

@@ -273,6 +273,7 @@ sub UWZ_Initialize($) {
                         "maps ".
                         "humanreadable:0,1 ".
                         "htmlattr ".
+                        "htmlsequence:ascending,descending ".
                         "lang ".
                         "sort_readings_by:severity,start ".
                         $readingFnAttributes;
@@ -923,6 +924,9 @@ sub UWZAsHtml($;$) {
     my $ret = '';
     my $hash = $defs{$name};    
 
+    my $htmlsequence = AttrVal($name, "htmlsequence", "none");
+    
+
     my $attr;
     if (AttrVal($name, "htmlattr", "none") ne "none") {
         $attr = AttrVal($name, "htmlattr", "");
@@ -935,25 +939,49 @@ sub UWZAsHtml($;$) {
     
         $ret .= '<table><tr><td>';
         $ret .= '<table class="block" '.$attr.'><tr><th></th><th></th></tr>';
-        
-        for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
-        
-            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
-            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
-            $ret .= ReadingsVal($name, "Warn_".$i."_LongText", "").'<br><br>';
-  
-            $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
+
+        if ($htmlsequence eq "descending") {
+            for ( my $i=ReadingsVal($name, "WarnCount", "")-1; $i>=0; $i--){
             
-            # language by AttrVal
-            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
-                $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
-            } else {
-                $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+                $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
+                $ret .= ReadingsVal($name, "Warn_".$i."_LongText", "").'<br><br>';
+      
+                $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
+                
+                # language by AttrVal
+                if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                    $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                } else {
+                    $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                }
+                # end language by AttrVal
+                $ret .= '</tr></table>';
+                $ret .= '</td></tr>';
             }
-            # end language by AttrVal
-            $ret .= '</tr></table>';
-            $ret .= '</td></tr>';
+        } else {
+###        
+            for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
+            
+                $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+                $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
+                $ret .= ReadingsVal($name, "Warn_".$i."_LongText", "").'<br><br>';
+      
+                $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
+                
+                # language by AttrVal
+                if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                    $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                } else {
+                    $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                }
+                # end language by AttrVal
+                $ret .= '</tr></table>';
+                $ret .= '</td></tr>';
+            }
         }
+###
+
   
         $ret .= '</table>';
         $ret .= '</td></tr>';
@@ -986,6 +1014,7 @@ sub UWZAsHtmlLite($;$) {
     my ($name,$items) = @_;
     my $ret = '';
     my $hash = $defs{$name}; 
+    my $htmlsequence = AttrVal($name, "htmlsequence", "none");
     my $attr;
     if (AttrVal($name, "htmlattr", "none") ne "none") {
         $attr = AttrVal($name, "htmlattr", "");
@@ -998,24 +1027,39 @@ sub UWZAsHtmlLite($;$) {
         $ret .= '<table><tr><td>';
         $ret .= '<table class="block" '.$attr.'><tr><th></th><th></th></tr>';
   
-        for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
-        
-            $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
-            $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
-            $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
-            # language by AttrVal
-            
-            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
-                $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
-            } else {
-                $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+        if ($htmlsequence eq "descending") {
+            for ( my $i=ReadingsVal($name, "WarnCount", "")-1; $i>=0; $i--){
+                $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+                $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
+                $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
+                # language by AttrVal
+                
+                if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                    $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                } else {
+                    $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                }
+                # end language by AttrVal
+                $ret .= '</tr></table>';
+                $ret .= '</td></tr>';
             }
-            # end language by AttrVal
-            $ret .= '</tr></table>';
-            $ret .= '</td></tr>';
-        
-        }
-        
+        } else {
+            for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
+                $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+                $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
+                $ret .= '<table '.$attr.'><tr><th></th><th></th></tr><tr><td><b>Start:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_Start", "")).'</td>';
+                # language by AttrVal
+                
+                if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                    $ret .= '<td><b>Ende:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                } else {
+                    $ret .= '<td><b>End:</b></td><td>'.localtime(ReadingsVal($name, "Warn_".$i."_End", "")).'</td>';
+                }
+                # end language by AttrVal
+                $ret .= '</tr></table>';
+                $ret .= '</td></tr>';
+            }
+        }    
         $ret .= '</table>';
         $ret .= '</td></tr>';
         $ret .= '</table>';
@@ -1046,15 +1090,21 @@ sub UWZAsHtmlFP($;$) {
 
     my ($name,$items) = @_;
     my $tablewidth = ReadingsVal($name, "WarnCount", "") * 80;
+    my $htmlsequence = AttrVal($name, "htmlsequence", "none");
     my $ret = '';
     
     $ret .= '<table class="uwz-fp" style="width:'.$tablewidth.'px"><tr><th></th><th></th></tr>';
     $ret .= "<tr>";
     
-    for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
-        $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
-    }
-    
+    if ($htmlsequence eq "descending") {
+        for ( my $i=ReadingsVal($name, "WarnCount", "")-1; $i>=0; $i--){
+            $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+        }
+    } else {
+        for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
+            $ret .= '<td class="uwzIcon"><img width="80px" src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
+        }
+    } 
     $ret .= "</tr>";
     $ret .= '</table>';
 
