@@ -563,7 +563,6 @@ sub UWZ_Done($) {
    
     # all term are separated by "|" , the first is the name of the instance
     my ( $name, %values ) = split( "\\|", $string );
-    UWZ_Log $name, 1, Dumper(%values);
     my $hash = $defs{$name};
     return unless ( defined($hash->{NAME}) );
    
@@ -773,14 +772,14 @@ sub UWZ_Run($) {
     #foreach my $single_warning (@{ $uwz_warnings->{'results'} }) {
     foreach my $single_warning (@sorted) {
 
-        UWZ_Log $hash, 1, "Warn_".$i."_EventID: ".$single_warning->{'payload'}{'id'};
+        UWZ_Log $hash, 4, "Warn_".$i."_EventID: ".$single_warning->{'payload'}{'id'};
         $message .= "Warn_".$i."_EventID|".$single_warning->{'payload'}{'id'}."|";
 
 
         my $chopcreation = substr($single_warning->{'payload'}{'creation'},0,10);
         $chopcreation = $chopcreation;
 
-        UWZ_Log $hash, 1, "Warn_".$i."_Creation: ".$chopcreation; 
+        UWZ_Log $hash, 4, "Warn_".$i."_Creation: ".$chopcreation; 
         $message .= "Warn_".$i."_Creation|".$chopcreation."|"; 
 
 
