@@ -1523,6 +1523,16 @@ sub UWZSearchAreaID($$) {
          Overwrite requested language for short and long warn text. (de|en|it|fr|es|..). 
          <br>
       </li>
+      <li><code>sort_readings_by</code>
+         <br>
+         define how readings will be sortet (start|severity). 
+         <br>
+      </li>
+      <li><code>htmlsequence</code>
+         <br>
+         define warn order of html output (ascending|descending). 
+         <br>
+      </li>
 
 
       <br>
@@ -1873,6 +1883,16 @@ sub UWZSearchAreaID($$) {
       <li><code>lang</code>
          <br>
          Umschalten der angeforderten Sprache für kurz und lange warn text. (de|en|it|fr|es|..). 
+         <br>
+      </li>
+      <li><code>sort_readings_by</code>
+         <br>
+         Sortierreihenfolge der Warnmeldungen. (start|severity). 
+         <br>
+      </li>
+      <li><code>htmlsequence</code>
+         <br>
+         Anzeigereihenfolge der html warnungen. (ascending|descending). 
          <br>
       </li>
 
