@@ -1546,6 +1546,10 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><b>Warn_</b><i>0|1|2|3...|9</i><b>_...</b> - active warnings</li>
       <li><b>WarnCount</b> - warnings count</li>
+      <li><b>Warn_</b><i>0</i><b>_EventID</b> - warning EventID </li>
+      <li><b>Warn_</b><i>0</i><b>_Creation</b> - warning creation </li>
+      <li><b>Warn_</b><i>0</i><b>_Creation_Date</b> - warning creation datum </li>
+      <li><b>Warn_</b><i>0</i><b>_Creation_Time</b> - warning creation time </li>
       <li><b>Warn_</b><i>0</i><b>_Start</b> - begin of warnperiod</li>
       <li><b>Warn_</b><i>0</i><b>_Start_Date</b> - start date of warnperiod</li>
       <li><b>Warn_</b><i>0</i><b>_Start_Time</b> - start time of warnperiod</li>
@@ -1907,6 +1911,10 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><b>Warn_</b><i>0|1|2|3...|9</i><b>_...</b> - aktive Warnmeldungen</li>
       <li><b>WarnCount</b> - Anzahl der aktiven Warnmeldungen</li>
+      <li><b>Warn_</b><i>0</i><b>_EventID</b> - EventID der Warnung </li>
+      <li><b>Warn_</b><i>0</i><b>_Creation</b> - Warnungs Erzeugung </li>
+      <li><b>Warn_</b><i>0</i><b>_Creation_Date</b> - Warnungs Erzeugungs Datum </li>
+      <li><b>Warn_</b><i>0</i><b>_Creation_Time</b> - Warnungs Erzeugungs Zeit </li>
       <li><b>Warn_</b><i>0</i><b>_Start</b> - Begin der Warnung</li>
       <li><b>Warn_</b><i>0</i><b>_Start_Date</b> - Startdatum der Warnung</li>
       <li><b>Warn_</b><i>0</i><b>_Start_Time</b> - Startzeit der Warnung</li>
