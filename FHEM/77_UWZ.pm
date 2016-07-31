@@ -276,6 +276,7 @@ sub UWZ_Initialize($) {
                         "htmlsequence:ascending,descending ".
                         "lang ".
                         "sort_readings_by:severity,start ".
+                        "localiconbase ".
                         $readingFnAttributes;
    
     foreach my $d(sort keys %{$modules{UWZ}{defptr}}) {
@@ -878,10 +879,16 @@ sub UWZ_Run($) {
         UWZ_Log $hash, 4, "Warn_".$i."_ShortText: ".$enc->decode($single_warning->{'payload'}{'translationsShortText'}{$uclang});
         $message .= "Warn_".$i."_ShortText|".$converter->convert($single_warning->{'payload'}{'translationsShortText'}{$uclang})."|";
 
+###
+        if (AttrVal( $name, 'localiconbase',undef) ) {
+            UWZ_Log $hash, 4, "Warn_".$i."_IconURL: ".AttrVal( $name, 'localiconbase',undef).$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".png";
+            $message .= "Warn_".$i."_IconURL|".AttrVal( $name, 'localiconbase',undef).$typenames{ $single_warning->{'type'} }."-".UWZ_GetSeverityColor($hash, UWZ_GetUWZLevel($hash,$single_warning->{'payload'}{'levelName'} )).".png|";
 
-        UWZ_Log $hash, 4, "Warn_".$i."_IconURL: http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".gif";
-        $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".UWZ_GetSeverityColor($hash, UWZ_GetUWZLevel($hash,$single_warning->{'payload'}{'levelName'} )).".gif|";
-
+        } else {
+            UWZ_Log $hash, 4, "Warn_".$i."_IconURL: http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".$single_warning->{'severity'}.".gif";
+            $message .= "Warn_".$i."_IconURL|http://www.unwetterzentrale.de/images/icons/".$typenames{ $single_warning->{'type'} }."-".UWZ_GetSeverityColor($hash, UWZ_GetUWZLevel($hash,$single_warning->{'payload'}{'levelName'} )).".gif|";
+        }
+###
 
         
         ## Hagel start
@@ -1539,6 +1546,12 @@ sub UWZSearchAreaID($$) {
          define warn order of html output (ascending|descending). 
          <br>
       </li>
+      <li><code>localiconbase</code>
+         <br>
+         define baseurl to host your own thunderstorm warn pics (filetype is png). 
+         <br>
+      </li>
+
 
 
       <br>
@@ -1905,6 +1918,11 @@ sub UWZSearchAreaID($$) {
       <li><code>htmlsequence</code>
          <br>
          Anzeigereihenfolge der html warnungen. (ascending|descending). 
+         <br>
+      </li>
+      <li><code>localiconbase</code>
+         <br>
+         BaseURL angeben um Warn Icons lokal zu hosten. (Dateityp ist png). 
          <br>
       </li>
 

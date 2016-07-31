@@ -1,3 +1,6 @@
+-2016-08-01
+  - feature: new Attribute: localiconbase
+
 -2016-07-31
   - feature: new Readings: Warn_0_AltitudeMin, Warn_0_AltitudeMax
 
