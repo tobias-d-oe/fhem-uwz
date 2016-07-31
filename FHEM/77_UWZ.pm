@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.4.3";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.4.4";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -855,6 +855,12 @@ sub UWZ_Run($) {
         UWZ_Log $hash, 4, "Warn_".$i."_levelName: ".$single_warning->{'payload'}{'levelName'};
         $message .= "Warn_".$i."_levelName|".$single_warning->{'payload'}{'levelName'}."|";
         
+        UWZ_Log $hash, 4, "Warn_".$i."_AltitudeMin: ".$enc->decode($single_warning->{'payload'}{'altMin'});
+        $message .= "Warn_".$i."_AltitudeMin|".$converter->convert($single_warning->{'payload'}{'altMin'})."|";
+
+        UWZ_Log $hash, 4, "Warn_".$i."_AltitudeMax: ".$enc->decode($single_warning->{'payload'}{'altMax'});
+        $message .= "Warn_".$i."_AltitudeMax|".$converter->convert($single_warning->{'payload'}{'altMax'})."|";
+
         my $uclang = "EN";
         if (AttrVal( $name, 'lang',undef) ) {
             $uclang = uc AttrVal( $name, 'lang','');
@@ -1546,6 +1552,8 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><b>Warn_</b><i>0|1|2|3...|9</i><b>_...</b> - active warnings</li>
       <li><b>WarnCount</b> - warnings count</li>
+      <li><b>Warn_</b><i>0</i><b>_AltitudeMin</b> - minimum altitude for warning </li>
+      <li><b>Warn_</b><i>0</i><b>_AltitudeMax</b> - maximum altitude for warning </li>
       <li><b>Warn_</b><i>0</i><b>_EventID</b> - warning EventID </li>
       <li><b>Warn_</b><i>0</i><b>_Creation</b> - warning creation </li>
       <li><b>Warn_</b><i>0</i><b>_Creation_Date</b> - warning creation datum </li>
@@ -1911,6 +1919,8 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><b>Warn_</b><i>0|1|2|3...|9</i><b>_...</b> - aktive Warnmeldungen</li>
       <li><b>WarnCount</b> - Anzahl der aktiven Warnmeldungen</li>
+      <li><b>Warn_</b><i>0</i><b>_AltitudeMin</b> - minimum Höhe für Warnung </li>
+      <li><b>Warn_</b><i>0</i><b>_AltitudeMax</b> - maximum Höhe für Warnung </li>
       <li><b>Warn_</b><i>0</i><b>_EventID</b> - EventID der Warnung </li>
       <li><b>Warn_</b><i>0</i><b>_Creation</b> - Warnungs Erzeugung </li>
       <li><b>Warn_</b><i>0</i><b>_Creation_Date</b> - Warnungs Erzeugungs Datum </li>

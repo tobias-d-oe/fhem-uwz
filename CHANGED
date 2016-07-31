@@ -1,4 +1,7 @@
 -2016-07-31
+  - feature: new Readings: Warn_0_AltitudeMin, Warn_0_AltitudeMax
+
+-2016-07-31
   - feature: added attribute htmlsequence (ascending|descending)
 
 -2016-07-29
