@@ -1,3 +1,7 @@
+-2016-08-02
+  - feature: new Readings: WarnUWZLevel,WarnUWZLevel_Color,WarnUWZLevel_Str
+  - Version bump to 1.4.5
+
 -2016-08-01
   - feature: new Attribute: localiconbase
 

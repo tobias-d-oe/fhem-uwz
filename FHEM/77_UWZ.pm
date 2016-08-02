@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.4.4";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
+my $version         = "1.4.5";      # ungerade Entwicklerversion Bsp.: 1.1, 1.3, 2.5
 
 my $countrycode = "DE";
 my $plz = "77777";
@@ -604,7 +604,7 @@ sub UWZ_Done($) {
             } else {
                 $newState = "Error: Could not capture all data. Please check CountryCode and PLZ.";
             }
-            
+
             readingsBulkUpdate($hash, "state", $newState);
             readingsBulkUpdate( $hash, "lastConnection", keys( %values )." values captured in ".$values{durationFetchReadings}." s" );
             UWZ_Log $hash, 4, keys( %values )." values captured";
@@ -770,8 +770,11 @@ sub UWZ_Run($) {
                             "11" => "rot",
                             "12" => "violett" );
 
+    my @uwzmaxlevel;
     #foreach my $single_warning (@{ $uwz_warnings->{'results'} }) {
     foreach my $single_warning (@sorted) {
+
+        push @uwzmaxlevel, UWZ_GetUWZLevel($hash,$single_warning->{'payload'}{'levelName'});
 
         UWZ_Log $hash, 4, "Warn_".$i."_EventID: ".$single_warning->{'payload'}{'id'};
         $message .= "Warn_".$i."_EventID|".$single_warning->{'payload'}{'id'}."|";
@@ -919,6 +922,40 @@ sub UWZ_Run($) {
         $i++;
     }
     
+    my $max;
+    for (@uwzmaxlevel) {
+        $max = $_ if !$max || $_ > $max
+    };
+
+    $message .= "WarnUWZLevel|";
+    $message .= $max."|";
+
+    UWZ_Log $hash, 4, "WarnUWZLevel_Color: ".UWZ_GetSeverityColor($hash, $max);
+    $message .= "WarnUWZLevel_Color|".UWZ_GetSeverityColor($hash, $max)."|";
+
+    ## Begin of redundant Reading
+    if ( $UWZ_humanreadable eq 1 ) {
+        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            my %uwzlevelname = ( "0" => "Stufe Grün (keine Warnung)",
+                                 "1" => "Stufe Dunkelgrün (Wetterhinweise)",
+                                 "2" => "Stufe Gelb (Vorwarnung für Unwetterwarnung)",
+                                 "3" => "Warnstufe Orange (Unwetterwarnung)",
+                                 "4" => "Warnstufe Rot (Unwetterwarnung)",
+                                 "5" => "Warnstufe Violett (Unwetterwarnung)");
+            UWZ_Log $hash, 4, "WarnUWZLevel_Str: ".$uwzlevelname{ $max };
+            $message .= "WarnUWZLevel_Str|".$uwzlevelname{ $max }."|";
+        } else {
+            my %uwzlevelname = ( "0" => "level green (no warnings)",
+                                 "1" => "level dark green (weather notice)",
+                                 "2" => "level yellow (severe weather watch)",
+                                 "3" => "Alert level Orange",
+                                 "4" => "Alert level Red",
+                                 "5" => "Alert level Violet");
+            UWZ_Log $hash, 4, "WarnUWZLevel_Str: ".$uwzlevelname{ $max };
+            $message .= "WarnUWZLevel_Str|".$uwzlevelname{ $max }."|";
+        }
+    }
+
     $message .= "durationFetchReadings|";
     $message .= sprintf "%.2f",  time() - $readingStartTime;
     
@@ -1565,6 +1602,9 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><b>Warn_</b><i>0|1|2|3...|9</i><b>_...</b> - active warnings</li>
       <li><b>WarnCount</b> - warnings count</li>
+      <li><b>WarnUWZLevel</b> - total warn level </li>
+      <li><b>WarnUWZLevel_Color</b> - total warn level color</li>
+      <li><b>WarnUWZLevel_Str</b> - total warn level string</li>
       <li><b>Warn_</b><i>0</i><b>_AltitudeMin</b> - minimum altitude for warning </li>
       <li><b>Warn_</b><i>0</i><b>_AltitudeMax</b> - maximum altitude for warning </li>
       <li><b>Warn_</b><i>0</i><b>_EventID</b> - warning EventID </li>
@@ -1937,6 +1977,9 @@ sub UWZSearchAreaID($$) {
       <br>
       <li><b>Warn_</b><i>0|1|2|3...|9</i><b>_...</b> - aktive Warnmeldungen</li>
       <li><b>WarnCount</b> - Anzahl der aktiven Warnmeldungen</li>
+      <li><b>WarnUWZLevel</b> - Gesamt Warn Level </li>
+      <li><b>WarnUWZLevel_Color</b> - Gesamt Warn Level Farbe</li>
+      <li><b>WarnUWZLevel_Str</b> - Gesamt Warn Level Text</li>
       <li><b>Warn_</b><i>0</i><b>_AltitudeMin</b> - minimum Höhe für Warnung </li>
       <li><b>Warn_</b><i>0</i><b>_AltitudeMax</b> - maximum Höhe für Warnung </li>
       <li><b>Warn_</b><i>0</i><b>_EventID</b> - EventID der Warnung </li>
