@@ -1,3 +1,13 @@
+-2016-08-02
+  - feature: new Readings: WarnUWZLevel,WarnUWZLevel_Color,WarnUWZLevel_Str
+  - Version bump to 1.4.5
+
+-2016-08-01
+  - feature: new Attribute: localiconbase
+
+-2016-07-31
+  - feature: new Readings: Warn_0_AltitudeMin, Warn_0_AltitudeMax
+
 -2016-07-31
   - feature: added attribute htmlsequence (ascending|descending)
 
