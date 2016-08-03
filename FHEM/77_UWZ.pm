@@ -922,7 +922,7 @@ sub UWZ_Run($) {
         $i++;
     }
     
-    my $max;
+    my $max=0;
     for (@uwzmaxlevel) {
         $max = $_ if !$max || $_ > $max
     };
