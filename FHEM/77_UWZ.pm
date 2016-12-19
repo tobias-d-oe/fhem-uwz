@@ -984,13 +984,13 @@ sub UWZAsHtml($;$) {
     }
 
 
-    if (ReadingsVal($name, "WarnCount", "") != 0 ) {
+    if (ReadingsVal($name, "WarnCount", 0) != 0 ) {
     
         $ret .= '<table><tr><td>';
         $ret .= '<table class="block" '.$attr.'><tr><th></th><th></th></tr>';
 
         if ($htmlsequence eq "descending") {
-            for ( my $i=ReadingsVal($name, "WarnCount", "")-1; $i>=0; $i--){
+            for ( my $i=ReadingsVal($name, "WarnCount", -1)-1; $i>=0; $i--){
             
                 $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
                 $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
@@ -1010,7 +1010,7 @@ sub UWZAsHtml($;$) {
             }
         } else {
 ###        
-            for ( my $i=0; $i<ReadingsVal($name, "WarnCount", ""); $i++){
+            for ( my $i=0; $i<ReadingsVal($name, "WarnCount", 0); $i++){
             
                 $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;"><img src="'.ReadingsVal($name, "Warn_".$i."_IconURL", "").'"></td>';
                 $ret .= '<td class="uwzValue"><b>'.ReadingsVal($name, "Warn_".$i."_ShortText", "").'</b><br><br>';
