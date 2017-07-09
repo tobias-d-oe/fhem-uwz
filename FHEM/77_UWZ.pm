@@ -1473,6 +1473,11 @@ sub UWZSearchAreaID($$) {
 
 
 =pod
+
+=item device
+=item summary       extracts thunderstorm warnings from unwetterzentrale.de
+=item summary_DE    extrahiert Unwetterwarnungen von unwetterzentrale.de
+
 =begin html
 
 <a name="UWZ"></a>
