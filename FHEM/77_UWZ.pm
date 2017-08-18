@@ -60,7 +60,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.6.0";
+my $version         = "1.6.1alpha";
 
 
 
@@ -310,7 +310,7 @@ sub UWZ_Initialize($) {
                         "htmltitleclass ".
                         "htmlsequence:ascending,descending ".
                         "lang ".
-                        "sort_readings_by:severity,start ".
+                        "sort_readings_by:severity,start,creation ".
                         "localiconbase ".
                         "intervalAtWarnLevel ".
                         $readingFnAttributes;
@@ -746,9 +746,15 @@ sub UWZ_Run($) {
     UWZ_Log $hash, 4, "There are ".$uwz_warncount." warnings active";
     my $sortby = AttrVal( $name, 'sort_readings_by',"" );
     my @sorted;
-    if ( $sortby ne "severity" ) {
+    
+    if ( $sortby eq "creation" ) {
+        UWZ_Log $hash, 4, "Sorting by creation";
+        @sorted =  sort { $b->{payload}{creation} <=> $a->{payload}{creation} } @{ $uwz_warnings->{'results'} };
+    
+    } elsif ( $sortby ne "severity" ) {
         UWZ_Log $hash, 4, "Sorting by dtgStart";
         @sorted =  sort { $a->{dtgStart} <=> $b->{dtgStart} } @{ $uwz_warnings->{'results'} };
+        
     } else {
         UWZ_Log $hash, 4, "Sorting by severity";
         @sorted =  sort { $a->{severity} <=> $b->{severity} } @{ $uwz_warnings->{'results'} };
@@ -1658,7 +1664,7 @@ sub UWZSearchAreaID($$) {
       </li>
       <li><code>sort_readings_by</code>
          <br>
-         define how readings will be sortet (start|severity). 
+         define how readings will be sortet (start|severity|creation).  
          <br>
       </li>
       <li><code>htmlsequence</code>
@@ -2051,7 +2057,7 @@ sub UWZSearchAreaID($$) {
       </li>
       <li><code>sort_readings_by</code>
          <br>
-         Sortierreihenfolge der Warnmeldungen. (start|severity). 
+         Sortierreihenfolge der Warnmeldungen. (start|severity|creation).
          <br>
       </li>
       <li><code>htmlsequence</code>
