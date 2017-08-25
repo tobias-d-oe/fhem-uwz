@@ -3,7 +3,6 @@
 #  77_UWZ.pm
 #
 #  (c) 2015-2016 Tobias D. Oestreicher
-#      2017      Marko Oldenburg
 #
 #  Special thanks goes to comitters:
 #       - Marko Oldenburg (leongaultier at gmail dot com)
@@ -62,7 +61,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.6.1alpha3";
+my $version         = "1.6.1alpha4";
 
 
 
