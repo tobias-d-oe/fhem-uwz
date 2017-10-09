@@ -61,7 +61,7 @@ use vars qw($readingFnAttributes);
 
 use vars qw(%defs);
 my $MODUL           = "UWZ";
-my $version         = "1.6.1alpha4";
+my $version         = "1.8.0";
 
 
 
